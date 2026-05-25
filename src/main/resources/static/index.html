@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring AI 对话机器人</title>
+    <style>
+        /* ===== 基础重置 ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ===== 整体卡片 ===== */
+        .chat-app {
+            width: 100%;
+            max-width: 720px;
+            height: 90vh;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ===== 顶部标题栏 ===== */
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            background: #fff;
+        }
+        .chat-header h1 { font-size: 18px; color: #333; }
+        #new-chat {
+            padding: 6px 14px;
+            font-size: 13px;
+            color: #555;
+            background: #f0f2f5;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        #new-chat:hover { background: #e4e6eb; }
+
+        /* ===== 消息列表区 ===== */
+        .messages {
+            flex: 1;                 /* 占满中间剩余空间 */
+            overflow-y: auto;        /* 内容超出时可滚动 */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* 单条消息气泡 */
+        .msg {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;   /* 保留换行和空格 */
+            word-break: break-word;
+        }
+        /* 用户消息:靠右、蓝底白字 */
+        .msg.user {
+            align-self: flex-end;
+            background: #0084ff;
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        /* 机器人消息:靠左、灰底黑字 */
+        .msg.bot {
+            align-self: flex-start;
+            background: #f0f2f5;
+            color: #222;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* ===== 底部输入栏 ===== */
+        .input-bar {
+            display: flex;
+            gap: 10px;
+            padding: 14px 16px;
+            border-top: 1px solid #eee;
+        }
+        #input {
+            flex: 1;
+            resize: none;
+            padding: 10px 14px;
+            font-size: 15px;
+            font-family: inherit;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            max-height: 120px;
+        }
+        #input:focus { border-color: #0084ff; }
+        #send {
+            padding: 0 22px;
+            font-size: 15px;
+            color: #fff;
+            background: #0084ff;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        #send:hover { background: #0073e0; }
+        #send:disabled { background: #a0c8f0; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="chat-app">
+        <!-- 顶部:标题 + 新对话按钮 -->
+        <header class="chat-header">
+            <h1>🤖 Spring AI 对话机器人</h1>
+            <button id="new-chat">新对话</button>
+        </header>
+
+        <!-- 中间:消息列表(app.js 会往这里动态插入气泡) -->
+        <main id="messages" class="messages"></main>
+
+        <!-- 底部:输入框 + 发送按钮 -->
+        <footer class="input-bar">
+            <textarea id="input" rows="1"
+                      placeholder="输入消息,Enter 发送,Shift+Enter 换行"></textarea>
+            <button id="send">发送</button>
+        </footer>
+    </div>
+
+    <!-- 引入我们的前端逻辑(下一步你手敲的文件) -->
+    <script src="/app.js"></script>
+</body>
+</html>
