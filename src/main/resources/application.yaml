@@ -1,3 +1,4 @@
+
 spring:
   application:
     name: SpringAIDemo
@@ -24,7 +25,18 @@ spring:
           jdbc:
             initialize-schema: always
 
-logging:
-  level:
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr:logging: localhost:8848
+        username: nacos
+        password: 123456
+level:
     org.springframework.ai.model.tool: DEBUG
     org.springframework.ai.tool: DEBUG
+server:
+  port: 8989
+
+
+

@@ -54,6 +54,24 @@ public class LocalFileTools {
 
     }
 
+    @Tool(description = "用于创建或覆盖写入本地电脑中指定绝对路径文件以及其内容")
+    public String writeFile(@ToolParam(description = "要写入的文件的绝对路径") String path,
+        @ToolParam(description = "要写入的内容") String content){
+        try {
+            //设置白名单路径
+            File allowBase = new File("D:\\ai-workspace").getCanonicalFile();
+            File file = new File(path).getCanonicalFile();
+            if (!file.toPath().startsWith(allowBase.toPath())){
+                return "Not Allowed";
+            }
+            Files.writeString(file.toPath(), content);
+
+            return "文件已经写入: " + path;
+        } catch (IOException e) {
+            return "写入失败，发生了错误: " + e.getMessage();
+        }
+    }
+
     // 2. 【怎么写结果】：定义返回给大模型的结果结构
     public record Response(String fileList, boolean success) {}
 
