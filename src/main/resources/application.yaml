@@ -29,14 +29,22 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr:logging: localhost:8848
+        server-addr: localhost:8848
         username: nacos
         password: 123456
-level:
+
+logging:
+  level:
     org.springframework.ai.model.tool: DEBUG
     org.springframework.ai.tool: DEBUG
 server:
   port: 8989
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:9898/eureka
+
 
 
 
