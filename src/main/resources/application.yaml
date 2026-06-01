@@ -1,9 +1,14 @@
 
 spring:
+  profiles:
+    active: dev
   application:
     name: SpringAIDemo
   config:
-    import: nacos:springai-config.yaml
+    import:
+      - nacos:common-config.yaml
+      - nacos:springai-config.yaml
+      - nacos:springai-config-${spring.profiles.active}.yaml
 
   # ① MySQL 数据源
   datasource:
@@ -38,6 +43,9 @@ spring:
         server-addr: localhost:8848
         username: nacos
         password: 123456
+    openfeign:
+      circuitbreaker:
+        enabled: true
 
 logging:
   level:
@@ -46,6 +54,11 @@ logging:
 server:
   port: 8989
 
+resilience4j:
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
 eureka:
   client:
     service-url:

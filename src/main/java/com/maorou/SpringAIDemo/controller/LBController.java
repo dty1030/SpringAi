@@ -1,5 +1,6 @@
 package com.maorou.SpringAIDemo.controller;
 
+import com.maorou.SpringAIDemo.feign.WeatherFeignClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -11,6 +12,9 @@ import org.springframework.web.client.RestTemplate;
 @RestController
 @RefreshScope
 public class LBController {
+
+    @Autowired
+    WeatherFeignClient weatherFeignClient;          // 注入 Feign客户端
 
     @Value("${demo.greeting}")
     String greeting;
@@ -39,5 +43,10 @@ public class LBController {
     @GetMapping("/callweather")
     public String callweather(@RequestParam String city){
         return restTemplate.getForObject("http://tool-service/weather?city={city}", String.class, city);
+    }
+
+    @GetMapping("/feignweather")
+    public String feignweather(@RequestParam String city){
+        return weatherFeignClient.getWeather(city); // 直接走Feign，不经 LLM、不经 RestTemplate
     }
 }
