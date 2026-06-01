@@ -2,6 +2,8 @@
 spring:
   application:
     name: SpringAIDemo
+  config:
+    import: nacos:springai-config.yaml
 
   # ① MySQL 数据源
   datasource:
@@ -29,6 +31,10 @@ spring:
   cloud:
     nacos:
       discovery:
+        server-addr: localhost:8848
+        username: nacos
+        password: 123456
+      config:
         server-addr: localhost:8848
         username: nacos
         password: 123456
