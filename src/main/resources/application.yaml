@@ -53,8 +53,26 @@ logging:
     org.springframework.ai.tool: DEBUG
 server:
   port: 8989
-
+#测试用
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,circuitbreakers,circuitbreakerevents
+#结束
+  endpoint:
+    health:
+      show-details: always
 resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 5  # 看最近 5 次
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3 #半开时放 3 个试探
   timelimiter:
     configs:
       default:

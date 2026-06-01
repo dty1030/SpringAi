@@ -10,5 +10,7 @@ public class RegistrationPrimaryPostProcessor implements BeanFactoryPostProcesso
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory){
         beanFactory.getBeanDefinition("nacosAutoServiceRegistration").setPrimary(true);
+        beanFactory.getBeanDefinition("nacosRegistration").setPrimary(true);   // ← 新增
+        beanFactory.getBeanDefinition("nacosServiceRegistry").setPrimary(true);   // ← 新增这行
     }
 }
