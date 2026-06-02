@@ -13,6 +13,8 @@ import org.springframework.web.client.RestTemplate;
 @RefreshScope
 public class LBController {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(LBController.class);
+
     @Autowired
     WeatherFeignClient weatherFeignClient;          // 注入 Feign客户端
 
@@ -47,6 +49,7 @@ public class LBController {
 
     @GetMapping("/feignweather")
     public String feignweather(@RequestParam String city){
+        log.info("chat 准备调用 tool-service, city={}", city);
         return weatherFeignClient.getWeather(city); // 直接走Feign，不经 LLM、不经 RestTemplate
     }
 }
