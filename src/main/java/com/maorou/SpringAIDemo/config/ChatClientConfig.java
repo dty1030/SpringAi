@@ -24,6 +24,16 @@ public class ChatClientConfig {
     //WeatherTools weatherTools = new WeatherTools();
 
     @Bean
+    public LocalFileTools localFileTools() {
+        return new LocalFileTools();
+    }
+
+    @Bean
+    public TimeTools timeTools() {
+        return new TimeTools();
+    }
+
+    @Bean
     public ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory,
                                  WeatherFeignClient weatherFeignClient){
         // 🎯 第一步：让它的 System 提示词知道自己是 Agent
@@ -34,7 +44,7 @@ public class ChatClientConfig {
 
         WeatherTools weatherTools = new WeatherTools(weatherFeignClient);
         // 🎯 第三步：把你的查文件工具箱名字注册进去（1.x 用 defaultToolNames 按 Bean 名注册）
-        builder.defaultTools(localFileTools, timeTools, weatherTools);
+        //builder.defaultTools(localFileTools, timeTools, weatherTools);
 
         // 🎯 最后一步：一切准备就绪，单独一行执行 build() 产生真正的客户端
         return builder.build();

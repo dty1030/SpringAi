@@ -5,12 +5,19 @@ import org.springframework.ai.tool.annotation.ToolParam;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 
 public class LocalFileTools {
 
-    @Tool(description = "用于读取并列出本地电脑中指定绝对路径（文件夹/目录）下的所有文件和子文件夹的名称")
-    public Response listFiles(@ToolParam(description="要扫描的本地绝对路径") String path){
+    @Tool(description = "List file and directory names\n" +
+            "  under a given absolute local directory path. Use this\n" +
+            "  before reading a file when the user asks to inspect a\n" +
+            "  directory.")
+    public Response listFiles(@ToolParam(description="Absolute local directory\n" +
+            "  path to list") String path){
             try{
             File file = new File(path);
             if (!file.exists()) {
@@ -33,7 +40,9 @@ public class LocalFileTools {
         }
     }
 
-    @Tool(description = "用于读取本地电脑中指定绝对路径文件中的内容")
+    @Tool(description = "Read the text content of a given\n" +
+            "  absolute local file path. Use this after locating a\n" +
+            "  file that the user wants to inspect or summarize.")
     public String readFile(@ToolParam(description="要读取的文件的绝对路径") String path){
         // 读文件内容 → return 出去
         try {
@@ -54,7 +63,10 @@ public class LocalFileTools {
 
     }
 
-    @Tool(description = "用于创建或覆盖写入本地电脑中指定绝对路径文件以及其内容")
+    @Tool(description = "Create or overwrite a local file\n" +
+            "  under D:\\\\ai-workspace with the given text content.\n" +
+            "  Only use this when the user explicitly asks to write a\n" +
+            "  file.")
     public String writeFile(@ToolParam(description = "要写入的文件的绝对路径") String path,
         @ToolParam(description = "要写入的内容") String content){
         try {
@@ -67,6 +79,37 @@ public class LocalFileTools {
             Files.writeString(file.toPath(), content);
 
             return "文件已经写入: " + path;
+        } catch (IOException e) {
+            return "写入失败，发生了错误: " + e.getMessage();
+        }
+    }
+    @Tool(description = "Get file infos of the giben absolute local file path, Only use this when the user explicitly asks to " +
+            "get the file infos")
+    public String getFileInfo(@ToolParam(description = "Absloute path of the file directory") String path){
+        try {
+            String res = "";
+            //设置白名单路径
+            File allowBase = new File("D:\\ai-workspace").getCanonicalFile();
+            File file = new File(path).getCanonicalFile();
+            if (!file.toPath().startsWith(allowBase.toPath())){
+                return "Not Allowed";
+            }
+            if (!file.exists()){
+                return "该路径在电脑中不存在，请确认是否输入正确";
+            }
+            res += "exists: true\n";
+            if (file.isDirectory()) {
+                res += "type: directory\n";
+            } else if (file.isFile()) {
+                res += "type: file\n";
+            }
+            long lastModifiedTime = file.lastModified();
+            String lastModified = Instant.ofEpochMilli(lastModifiedTime)
+                            .atZone(ZoneId.systemDefault())
+                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            long fileSize = Files.size(file.toPath());
+
+            return res + "\n" + "Space Usage: " + fileSize + "\n" + "Last Modified Time: "+ lastModified;
         } catch (IOException e) {
             return "写入失败，发生了错误: " + e.getMessage();
         }
