@@ -1,15 +1,9 @@
 
 spring:
   profiles:
-    active: dev
+    active: ai-local
   application:
     name: SpringAIDemo
-  config:
-    import:
-      - nacos:common-config.yaml
-      - nacos:springai-config.yaml
-      - nacos:springai-config-${spring.profiles.active}.yaml
-
   # ① MySQL 数据源
   datasource:
     url: jdbc:mysql://localhost:3306/springai?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8
@@ -33,19 +27,7 @@ spring:
             initialize-schema: always
 
 
-  cloud:
-    nacos:
-      discovery:
-        server-addr: localhost:8848
-        username: nacos
-        password: 123456
-      config:
-        server-addr: localhost:8848
-        username: nacos
-        password: 123456
-    openfeign:
-      circuitbreaker:
-        enabled: true
+
 
 logging:
   level:
@@ -66,25 +48,10 @@ management:
   endpoint:
     health:
       show-details: always
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        sliding-window-type: COUNT_BASED
-        sliding-window-size: 5  # 看最近 5 次
-        minimum-number-of-calls: 5
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
-        permitted-number-of-calls-in-half-open-state: 3 #半开时放 3 个试探
-  timelimiter:
-    configs:
-      default:
-        timeout-duration: 5s
-eureka:
-  client:
-    service-url:
-      defaultZone: http://127.0.0.1:9898/eureka
 
 
 
 
+
+demo:
+  greeting: ai-local

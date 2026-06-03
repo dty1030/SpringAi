@@ -1,0 +1,14 @@
+spring:
+  cloud:
+    nacos:
+      config:
+        enabled: false
+      discovery:
+        enabled: false
+    openfeign:
+      circuitbreaker:
+        enabled: false
+
+eureka:
+  client:
+    enabled: false
