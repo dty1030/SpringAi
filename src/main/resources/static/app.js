@@ -2,6 +2,7 @@ const messagesEl = document.getElementById('messages');
 const inputEl    = document.getElementById('input');
 const sendBtn    = document.getElementById('send');
 const newChatBtn = document.getElementById('new-chat');
+const toolModeEl = document.getElementById('tool-mode');
 
 
 // 会话 ID:多轮记忆靠它。页面一加载就生成一个唯一 ID
@@ -36,7 +37,11 @@ async function sendMessage() {
         const res = await fetch('/api/chat/stream', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text, conversationId: conversationId })
+            body: JSON.stringify({
+                message: text,
+                conversationId: conversationId,
+                toolMode: toolModeEl.value
+            })
         });
 
         // ④ 拿到"流读取器",一块一块地读响应

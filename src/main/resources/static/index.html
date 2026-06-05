@@ -91,6 +91,18 @@
             padding: 14px 16px;
             border-top: 1px solid #eee;
         }
+        #tool-mode {
+            width: 92px;
+            padding: 0 10px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #333;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+        #tool-mode:focus { border-color: #0084ff; }
         #input {
             flex: 1;
             resize: none;
@@ -129,6 +141,13 @@
 
         <!-- 底部:输入框 + 发送按钮 -->
         <footer class="input-bar">
+            <select id="tool-mode" aria-label="Tool mode">
+                <option value="none">None</option>
+                <option value="time">Time</option>
+                <option value="file">File</option>
+                <option value="rag">RAG</option>
+                <option value="all">All</option>
+            </select>
             <textarea id="input" rows="1"
                       placeholder="输入消息,Enter 发送,Shift+Enter 换行"></textarea>
             <button id="send">发送</button>
