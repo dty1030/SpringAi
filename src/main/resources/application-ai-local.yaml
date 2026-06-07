@@ -1,4 +1,5 @@
 spring:
+
   ai:
     model:
       embedding: ollama
@@ -19,5 +20,9 @@ spring:
 eureka:
   client:
     enabled: false
-
-
+app:
+  auth:
+    mode: jwt
+  jwt:
+    secret: spring-ai-demo-jwt-secret-key-please-change-in-production
+    ttl-millis: 3600000
