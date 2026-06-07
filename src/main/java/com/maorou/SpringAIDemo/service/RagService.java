@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +20,7 @@ import java.util.Map;
 public class RagService {
 
     @Autowired
-    VectorStore vectorStore;
+    SimpleVectorStore vectorStore;
 
     private int rawDocumentCount;
     private int chunkCount;
@@ -54,6 +54,12 @@ public class RagService {
                             .build();
             List<Document> chunks = splitter.split(documents);
             vectorStore.add(chunks);
+            File storeFile = new File("D:\\ai-workspace\\rag-store\\simple-vector-store.json");
+            File parentDir = storeFile.getParentFile();
+            if (parentDir != null) {
+                parentDir.mkdirs();
+            }
+            vectorStore.save(storeFile);
             rawDocumentCount = documents.size();
             chunkCount = chunks.size();
         }
