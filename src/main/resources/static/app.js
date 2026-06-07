@@ -93,7 +93,6 @@ async function sendMessage() {
                 message: text,
                 conversationId: conversationId,
                 toolMode: toolModeEl.value,
-                userRole: currentRole
             })
         });
 

@@ -1,7 +1,7 @@
 package com.maorou.SpringAIDemo;
 
 public  record ChatRequest(String message, String conversationId,
-                           String toolMode, String userRole){
+                           String toolMode){
 
 
 }

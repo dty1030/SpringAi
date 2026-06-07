@@ -13,10 +13,12 @@ import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvi
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 
 @RestController
@@ -48,8 +50,10 @@ public class ChatController {
         String toolMode = req.toolMode();
         String role = currentUser.role();
         if (!isToolAllowed(role, toolMode)) {
-            return Flux.just("Access denied: role " +
-                    role + " cannot use toolMode " + toolMode);
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Access denied: role " + role + " cannot use toolMode " + toolMode
+            );
         }
         ChatClient.ChatClientRequestSpec prompt =
                 chatClient.prompt()
