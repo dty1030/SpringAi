@@ -1,14 +1,26 @@
 const messagesEl = document.getElementById('messages');
-const inputEl    = document.getElementById('input');
-const sendBtn    = document.getElementById('send');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('send');
 const newChatBtn = document.getElementById('new-chat');
 const toolModeEl = document.getElementById('tool-mode');
+const usernameEl = document.getElementById('username');
+const loginBtn = document.getElementById('login');
+const logoutBtn = document.getElementById('logout');
+const authStatusEl = document.getElementById('auth-status');
 
-
-// 会话 ID:多轮记忆靠它。页面一加载就生成一个唯一 ID
 let conversationId = crypto.randomUUID();
+let authToken = localStorage.getItem('spring-ai-demo-token') || '';
+let currentRole = localStorage.getItem('spring-ai-demo-role') || '';
+let currentUserId = localStorage.getItem('spring-ai-demo-user-id') || '';
 
-//
+function updateAuthStatus() {
+    if (authToken) {
+        authStatusEl.textContent = `${currentUserId} / ${currentRole}`;
+        return;
+    }
+    authStatusEl.textContent = 'Not logged in';
+}
+
 function addMessage(text, sender) {
     const div = document.createElement('div');
     div.className = 'msg ' + sender;
@@ -16,78 +28,122 @@ function addMessage(text, sender) {
     messagesEl.appendChild(div);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     return div;
-
 }
 
+async function login() {
+    const username = usernameEl.value.trim();
+    if (!username) return;
 
+    const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+    });
 
-// ===== 2. 发送消息 + 接收流式回复 =====
+    if (!res.ok) {
+        addMessage(`Login failed: HTTP ${res.status}`, 'bot');
+        return;
+    }
+
+    const data = await res.json();
+    authToken = data.token;
+    currentRole = data.role;
+    currentUserId = data.userId;
+    localStorage.setItem('spring-ai-demo-token', authToken);
+    localStorage.setItem('spring-ai-demo-role', currentRole);
+    localStorage.setItem('spring-ai-demo-user-id', currentUserId);
+    updateAuthStatus();
+    addMessage(`Logged in as ${currentUserId} (${currentRole})`, 'bot');
+}
+
+function logout() {
+    authToken = '';
+    currentRole = '';
+    currentUserId = '';
+    localStorage.removeItem('spring-ai-demo-token');
+    localStorage.removeItem('spring-ai-demo-role');
+    localStorage.removeItem('spring-ai-demo-user-id');
+    updateAuthStatus();
+    addMessage('Logged out', 'bot');
+}
+
 async function sendMessage() {
     const text = inputEl.value.trim();
-    if (!text) return;                          // 空消息不发
+    if (!text) return;
 
-    inputEl.value = '';                         // 清空输入框
-    sendBtn.disabled = true;                    // 发送中禁用按钮,防止重复点
+    if (!authToken) {
+        addMessage('Please login before sending a message.', 'bot');
+        return;
+    }
 
-    addMessage(text, 'user');                   // ① 显示用户气泡
-    const botDiv = addMessage('', 'bot');       // ② 先建一个"空"的机器人气泡,待会往里填
+    inputEl.value = '';
+    sendBtn.disabled = true;
+
+    addMessage(text, 'user');
+    const botDiv = addMessage('', 'bot');
 
     try {
-        // ③ 向后端发起请求(POST + JSON 请求体)
         const res = await fetch('/api/chat/stream', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + authToken
+            },
             body: JSON.stringify({
                 message: text,
                 conversationId: conversationId,
-                toolMode: toolModeEl.value
+                toolMode: toolModeEl.value,
+                userRole: currentRole
             })
         });
 
-        // ④ 拿到"流读取器",一块一块地读响应
+        if (!res.ok) {
+            botDiv.textContent = `Request failed: HTTP ${res.status}`;
+            return;
+        }
+
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
 
         while (true) {
             const { value, done } = await reader.read();
-            if (done) break;                    // 流读完了,跳出循环
+            if (done) break;
 
-            buffer += decoder.decode(value, { stream: true });  // 字节→文字,累加进缓冲
+            buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
-            buffer = lines.pop();               // 最后一行可能不完整,留到下次再拼
+            buffer = lines.pop();
 
             for (const line of lines) {
                 if (line.startsWith('data:')) {
-                    botDiv.textContent += line.slice(5);        // 去掉"data:"前缀,拼进气泡
+                    botDiv.textContent += line.slice(5);
                     messagesEl.scrollTop = messagesEl.scrollHeight;
                 }
             }
         }
     } catch (e) {
-        botDiv.textContent = '出错了:' + e.message;
+        botDiv.textContent = 'Error: ' + e.message;
     } finally {
-        sendBtn.disabled = false;               // 恢复按钮
-        inputEl.focus();                        // 焦点回到输入框
+        sendBtn.disabled = false;
+        inputEl.focus();
     }
 }
 
-// ===== 3. 绑定事件 =====
-
-// 点"发送"按钮 → 发消息
+loginBtn.addEventListener('click', login);
+logoutBtn.addEventListener('click', logout);
 sendBtn.addEventListener('click', sendMessage);
 
-// 在输入框按回车 → 发消息;Shift+回车 → 换行
 inputEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();     // 阻止回车的默认"换行"行为
+        e.preventDefault();
         sendMessage();
     }
 });
 
-// 点"新对话" → 换一个会话 ID + 清空界面
 newChatBtn.addEventListener('click', () => {
-    conversationId = crypto.randomUUID();   // 换新 ID → 机器人"忘掉"之前的对话
-    messagesEl.innerHTML = '';              // 清空消息区
+    conversationId = crypto.randomUUID();
+    messagesEl.innerHTML = '';
     inputEl.focus();
 });
+
+updateAuthStatus();
