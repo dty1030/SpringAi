@@ -7,11 +7,11 @@ import com.maorou.SpringAIDemo.auth.CurrentUser;
 import com.maorou.SpringAIDemo.functions.CodeSandboxTools;
 import com.maorou.SpringAIDemo.functions.LocalFileTools;
 import com.maorou.SpringAIDemo.functions.TimeTools;
+import com.maorou.SpringAIDemo.service.RagService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,9 +23,6 @@ import reactor.core.publisher.Flux;
 
 @RestController
 public class ChatController {
-
-    @Autowired
-    VectorStore vectorStore;
 
     @Autowired
     ChatClient chatClient;
@@ -42,9 +39,11 @@ public class ChatController {
     @Autowired
     AuthService authService;
 
+    @Autowired
+    private RagService ragService;
 
     @PostMapping(value = "/api/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> stream(@RequestBody ChatRequest req, HttpServletRequest httpRequest){
+    public Flux<String> stream(@RequestBody ChatRequest req, HttpServletRequest httpRequest) {
 
         CurrentUser currentUser = authService.authenticate(httpRequest, req);
         String toolMode = req.toolMode();
@@ -61,32 +60,30 @@ public class ChatController {
                         .advisors(advisorSpec ->
                                 advisorSpec.param(ChatMemory.CONVERSATION_ID,
                                         req.conversationId()));
-        if ("time".equals(req.toolMode())){
+        if ("time".equals(req.toolMode())) {
             prompt = prompt.tools(timeTools);
         }
-        else if ("file".equals(req.toolMode())){
+        else if ("file".equals(req.toolMode())) {
             prompt = prompt.tools(localFileTools);
         }
         else if ("all".equals(req.toolMode())) {
             prompt = prompt.tools(timeTools,
                     localFileTools);
         } else if ("rag".equals(req.toolMode())) {
-            prompt = prompt.advisors(QuestionAnswerAdvisor.builder(vectorStore)
+            prompt = prompt.advisors(QuestionAnswerAdvisor.builder(ragService.getVectorStore())
                     .build());
         }
         else if ("code".equals(req.toolMode())) {
             prompt = prompt.tools(codeSandboxTools);
         }
         return prompt.stream().content();
-
-
     }
 
-    private boolean isToolAllowed(String role, String toolMode){
-        if ("admin".equals(role)){
+    private boolean isToolAllowed(String role, String toolMode) {
+        if ("admin".equals(role)) {
             return true;
         }
-        if ("trusted".equals(role)){
+        if ("trusted".equals(role)) {
             return "none".equals(toolMode) || "time".equals(toolMode) || "rag".equals(toolMode) || "file".equals(toolMode);
         }
         return "none".equals(toolMode)

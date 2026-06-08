@@ -1,7 +1,9 @@
 package com.maorou.SpringAIDemo.service;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
@@ -20,10 +22,25 @@ import java.util.Map;
 public class RagService {
 
     @Autowired
-    SimpleVectorStore vectorStore;
+    EmbeddingModel embeddingModel;
+
+    private SimpleVectorStore vectorStore;
 
     private int rawDocumentCount;
     private int chunkCount;
+
+    @PostConstruct
+    public void init() {
+        vectorStore = createEmptyVectorStore();
+        File storeFile = getStoreFile();
+        if (storeFile.exists()) {
+            vectorStore.load(storeFile);
+        }
+    }
+
+    public SimpleVectorStore getVectorStore() {
+        return vectorStore;
+    }
 
     public String reload() throws IOException {
         File dir = new File("D:\\ai-workspace\\rag-docs");
@@ -53,13 +70,17 @@ public class RagService {
                             .withMaxNumChunks(100)
                             .build();
             List<Document> chunks = splitter.split(documents);
-            vectorStore.add(chunks);
-            File storeFile = new File("D:\\ai-workspace\\rag-store\\simple-vector-store.json");
+
+            SimpleVectorStore newVectorStore = createEmptyVectorStore();
+            newVectorStore.add(chunks);
+
+            File storeFile = getStoreFile();
             File parentDir = storeFile.getParentFile();
             if (parentDir != null) {
                 parentDir.mkdirs();
             }
-            vectorStore.save(storeFile);
+            newVectorStore.save(storeFile);
+            vectorStore = newVectorStore;
             rawDocumentCount = documents.size();
             chunkCount = chunks.size();
         }
@@ -91,5 +112,14 @@ public class RagService {
                     text);
         }
         return matches;
+    }
+
+    private SimpleVectorStore createEmptyVectorStore() {
+        return SimpleVectorStore.builder(embeddingModel)
+                .build();
+    }
+
+    private File getStoreFile() {
+        return new File("D:\\ai-workspace\\rag-store\\simple-vector-store.json");
     }
 }
