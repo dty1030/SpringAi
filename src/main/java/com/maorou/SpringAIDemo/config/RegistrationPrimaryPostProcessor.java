@@ -1,17 +1,29 @@
 package com.maorou.SpringAIDemo.config;
 
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("!ai-local")
+@ConditionalOnProperty(
+        name = "spring.cloud.nacos.discovery.enabled",
+        havingValue = "true"
+)
 public class RegistrationPrimaryPostProcessor implements BeanFactoryPostProcessor {
+
     @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory){
-        beanFactory.getBeanDefinition("nacosAutoServiceRegistration").setPrimary(true);
-        beanFactory.getBeanDefinition("nacosRegistration").setPrimary(true);   // ← 新增
-        beanFactory.getBeanDefinition("nacosServiceRegistry").setPrimary(true);   // ← 新增这行
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+        markPrimaryIfPresent(beanFactory, "nacosAutoServiceRegistration");
+        markPrimaryIfPresent(beanFactory, "nacosRegistration");
+        markPrimaryIfPresent(beanFactory, "nacosServiceRegistry");
+    }
+
+    private void markPrimaryIfPresent(
+            ConfigurableListableBeanFactory beanFactory,
+            String beanName) {
+        if (beanFactory.containsBeanDefinition(beanName)) {
+            beanFactory.getBeanDefinition(beanName).setPrimary(true);
+        }
     }
 }
