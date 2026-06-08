@@ -1,4 +1,5 @@
 package com.maorou.SpringAIDemo.functions;
+import com.maorou.SpringAIDemo.workspace.WorkspaceStrategy;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
@@ -11,6 +12,12 @@ import java.time.format.DateTimeFormatter;
 
 
 public class LocalFileTools {
+
+
+    private final WorkspaceStrategy workspaceStrategy;
+    public LocalFileTools(WorkspaceStrategy workspaceStrategy){
+        this.workspaceStrategy = workspaceStrategy;
+    }
 
     @Tool(description = "List file and directory names\n" +
             "  under a given absolute local directory path. Use this\n" +
@@ -64,14 +71,16 @@ public class LocalFileTools {
     }
 
     @Tool(description = "Create or overwrite a local file\n" +
-            "  under D:\\\\ai-workspace with the given text content.\n" +
+            "  under the configured workspace directory with the given text content.\n" +
             "  Only use this when the user explicitly asks to write a\n" +
             "  file.")
     public String writeFile(@ToolParam(description = "要写入的文件的绝对路径") String path,
         @ToolParam(description = "要写入的内容") String content){
         try {
             //设置白名单路径
-            File allowBase = new File("D:\\ai-workspace").getCanonicalFile();
+            File allowBase = workspaceStrategy.allowedFileBaseDir()
+                    .toFile()
+                    .getCanonicalFile();
             File file = new File(path).getCanonicalFile();
             if (!file.toPath().startsWith(allowBase.toPath())){
                 return "Not Allowed";
@@ -89,7 +98,9 @@ public class LocalFileTools {
         try {
             String res = "";
             //设置白名单路径
-            File allowBase = new File("D:\\ai-workspace").getCanonicalFile();
+            File allowBase = workspaceStrategy.allowedFileBaseDir()
+                    .toFile()
+                    .getCanonicalFile();
             File file = new File(path).getCanonicalFile();
             if (!file.toPath().startsWith(allowBase.toPath())){
                 return "Not Allowed";

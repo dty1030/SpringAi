@@ -4,28 +4,24 @@ import com.maorou.SpringAIDemo.feign.WeatherFeignClient;
 import com.maorou.SpringAIDemo.functions.LocalFileTools;
 import com.maorou.SpringAIDemo.functions.TimeTools;
 import com.maorou.SpringAIDemo.functions.WeatherTools;
-import com.maorou.SpringAIDemo.web.CustomLoadBalancerConfiguration;
+import com.maorou.SpringAIDemo.workspace.WorkspaceStrategy;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.loadbalancer.annotation.LoadBalancerClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Description;
 
 
 @Configuration
 public class ChatClientConfig {
 
 
-    LocalFileTools localFileTools = new LocalFileTools();
     TimeTools timeTools = new TimeTools();
     //WeatherTools weatherTools = new WeatherTools();
 
     @Bean
-    public LocalFileTools localFileTools() {
-        return new LocalFileTools();
+    public LocalFileTools localFileTools(WorkspaceStrategy workspaceStrategy) {
+        return new LocalFileTools(workspaceStrategy);
     }
 
     @Bean

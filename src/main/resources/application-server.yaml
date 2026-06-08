@@ -1,9 +1,9 @@
 spring:
-
   ai:
     model:
       embedding: ollama
     ollama:
+      base-url: http://localhost:11434
       embedding:
         options:
           model: nomic-embed-text
@@ -20,9 +20,10 @@ spring:
 eureka:
   client:
     enabled: false
+
 app:
   workspace:
-    mode: local
+    mode: server
   auth:
     mode: jwt
   jwt:

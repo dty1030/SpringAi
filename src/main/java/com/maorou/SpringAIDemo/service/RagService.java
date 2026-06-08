@@ -1,5 +1,6 @@
 package com.maorou.SpringAIDemo.service;
 
+import com.maorou.SpringAIDemo.workspace.WorkspaceStrategy;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
@@ -22,7 +23,12 @@ import java.util.Map;
 public class RagService {
 
     @Autowired
+    WorkspaceStrategy workspaceStrategy;
+
+    @Autowired
     EmbeddingModel embeddingModel;
+
+
 
     private SimpleVectorStore vectorStore;
 
@@ -43,7 +49,7 @@ public class RagService {
     }
 
     public String reload() throws IOException {
-        File dir = new File("D:\\ai-workspace\\rag-docs");
+        File dir = workspaceStrategy.ragDocsDir().toFile();
         List<Document> documents = new ArrayList<>();
 
         if (dir.exists()) {
@@ -120,6 +126,6 @@ public class RagService {
     }
 
     private File getStoreFile() {
-        return new File("D:\\ai-workspace\\rag-store\\simple-vector-store.json");
+        return workspaceStrategy.ragStoreFile().toFile();
     }
 }

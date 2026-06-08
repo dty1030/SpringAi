@@ -1,5 +1,6 @@
 package com.maorou.SpringAIDemo.functions;
 
+import com.maorou.SpringAIDemo.workspace.WorkspaceStrategy;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -15,13 +16,19 @@ public class CodeSandboxTools {
     private static final int RUN_TIMEOUT_SECONDS = 3;
     private static final int MAX_OUTPUT_LENGTH = 2000;
 
+    private final WorkspaceStrategy workspaceStrategy;
+
+    public CodeSandboxTools(WorkspaceStrategy workspaceStrategy) {
+        this.workspaceStrategy = workspaceStrategy;
+    }
+
     @Tool(description = "Run a small Java program in a restricted local sandbox directory.")
     public String runJavaCode(
             @ToolParam(description = "Complete Java source code. It must define a public class named Main.")
             String code) {
         try {
             // Use a fixed workspace so generated code never runs from the project directory.
-            Path sandboxDir = Path.of("D:\\ai-workspace\\code-sandbox");
+            Path sandboxDir = workspaceStrategy.codeSandboxDir();
             Files.createDirectories(sandboxDir);
 
             // The submitted code must compile as Main.java because javac/java use the class name.
