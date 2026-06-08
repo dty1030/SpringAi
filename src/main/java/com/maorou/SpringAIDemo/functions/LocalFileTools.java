@@ -92,42 +92,77 @@ public class LocalFileTools {
             return "写入失败，发生了错误: " + e.getMessage();
         }
     }
+//    @Tool(description = "Get file infos of the giben absolute local file path, Only use this when the user explicitly asks to " +
+//            "get the file infos")
+//    public String getFileInfo(@ToolParam(description = "Absloute path of the file directory") String path){
+//        try {
+//            String res = "";
+//            //设置白名单路径
+//            File allowBase = workspaceStrategy.allowedFileBaseDir()
+//                    .toFile()
+//                    .getCanonicalFile();
+//            File file = new File(path).getCanonicalFile();
+//            if (!file.toPath().startsWith(allowBase.toPath())){
+//                return "Not Allowed";
+//            }
+//            if (!file.exists()){
+//                return "该路径在电脑中不存在，请确认是否输入正确";
+//            }
+//            res += "exists: true\n";
+//            if (file.isDirectory()) {
+//                res += "type: directory\n";
+//            } else if (file.isFile()) {
+//                res += "type: file\n";
+//            }
+//            long lastModifiedTime = file.lastModified();
+//            String lastModified = Instant.ofEpochMilli(lastModifiedTime)
+//                            .atZone(ZoneId.systemDefault())
+//                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+//            long fileSize = Files.size(file.toPath());
+//
+//            return res + "\n" + "Space Usage: " + fileSize + "\n" + "Last Modified Time: "+ lastModified;
+//        } catch (IOException e) {
+//            return "写入失败，发生了错误: " + e.getMessage();
+//        }
+//    }
+
     @Tool(description = "Get file infos of the giben absolute local file path, Only use this when the user explicitly asks to " +
             "get the file infos")
-    public String getFileInfo(@ToolParam(description = "Absloute path of the file directory") String path){
+    public FileInfo getFileInfo(@ToolParam(description = "Absloute path of the file directory") String path){
         try {
-            String res = "";
+            String filetype = "";
+
             //设置白名单路径
             File allowBase = workspaceStrategy.allowedFileBaseDir()
                     .toFile()
                     .getCanonicalFile();
             File file = new File(path).getCanonicalFile();
             if (!file.toPath().startsWith(allowBase.toPath())){
-                return "Not Allowed";
+                return new FileInfo(false, null, null, null, "Not Allowed");
             }
             if (!file.exists()){
-                return "该路径在电脑中不存在，请确认是否输入正确";
+                return new FileInfo(false,null, null, null, "file not found");
             }
-            res += "exists: true\n";
             if (file.isDirectory()) {
-                res += "type: directory\n";
+                filetype = "directory";
             } else if (file.isFile()) {
-                res += "type: file\n";
+                filetype = "file";
             }
             long lastModifiedTime = file.lastModified();
             String lastModified = Instant.ofEpochMilli(lastModifiedTime)
-                            .atZone(ZoneId.systemDefault())
-                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    .atZone(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             long fileSize = Files.size(file.toPath());
 
-            return res + "\n" + "Space Usage: " + fileSize + "\n" + "Last Modified Time: "+ lastModified;
+            return new FileInfo(true, filetype, fileSize, lastModified, null);
         } catch (IOException e) {
-            return "写入失败，发生了错误: " + e.getMessage();
+            return new FileInfo(false, null, null, null, "error: " + e.getMessage());
         }
     }
-
-    // 2. 【怎么写结果】：定义返回给大模型的结果结构
+    //定义返回给大模型的结果结构
     public record Response(String fileList, boolean success) {}
+
+    public record FileInfo(boolean exists, String type, Long sizeBytes, String lastModified, String note){}
 
 
 
