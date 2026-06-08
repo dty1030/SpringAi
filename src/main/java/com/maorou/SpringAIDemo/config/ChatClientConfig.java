@@ -8,6 +8,8 @@ import com.maorou.SpringAIDemo.workspace.WorkspaceStrategy;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.function.FunctionToolCallback;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -45,6 +47,9 @@ public class ChatClientConfig {
         // 🎯 最后一步：一切准备就绪，单独一行执行 build() 产生真正的客户端
         return builder.build();
     }
+
+
+
 
 
 }

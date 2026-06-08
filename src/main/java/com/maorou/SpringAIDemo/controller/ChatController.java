@@ -6,12 +6,14 @@ import com.maorou.SpringAIDemo.auth.AuthService;
 import com.maorou.SpringAIDemo.auth.CurrentUser;
 import com.maorou.SpringAIDemo.functions.CodeSandboxTools;
 import com.maorou.SpringAIDemo.functions.LocalFileTools;
+import com.maorou.SpringAIDemo.functions.MathToolFactory;
 import com.maorou.SpringAIDemo.functions.TimeTools;
 import com.maorou.SpringAIDemo.service.RagService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -41,6 +43,11 @@ public class ChatController {
 
     @Autowired
     private RagService ragService;
+
+
+
+    @Autowired
+    MathToolFactory mathToolFactory;
 
     @PostMapping(value = "/api/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> stream(@RequestBody ChatRequest req, HttpServletRequest httpRequest) {
@@ -75,6 +82,8 @@ public class ChatController {
         }
         else if ("code".equals(req.toolMode())) {
             prompt = prompt.tools(codeSandboxTools);
+        } else if ("dyn".equals(req.toolMode())) {
+            prompt = prompt.toolCallbacks(mathToolFactory.buildTools());
         }
         return prompt.stream().content();
     }
