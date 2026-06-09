@@ -55,3 +55,48 @@
    👉 "造出来待命"和"被调用一次"是两件事,看到 build/construct/register 别脑补成"跑了"。
 
 ---
+
+## L3 · MCP(跨进程,工具代码住在别的程序里)
+
+> 一句话:工具的真实代码不在你的进程里,而在另一个独立程序(MCP Server)。你的 Agent(MCP Client)启动时把它当子进程拉起、握手、发现它的工具,聊天时模型调用 → 实际执行发生在那个外部进程。行为彻底外置,你只配了个"用什么命令启动它"。
+
+1. **判断哪层该自己写、哪层该用库(比 MCP 本身更值钱)**
+   成熟的标准协议(MCP 的 JSON-RPC/STDIO 握手)= 别手写,用库,等于手写 HTTP 客户端;**理解协议 + 写集成胶水 + 能 debug = 高 ROI**。用库 ≠ 当黑箱:可以 `javap`/翻 jar 看它造了哪些 bean、吃哪些配置,把黑箱拆成白箱再用。
+   👉 遇到任何"要不要自己实现 X":X 是行业标准协议/基础设施→用库并读懂;X 是你的业务逻辑→自己写。
+
+2. **MCP 两端:Client(消费方)vs Server(暴露方)**
+   Client = 我去用别人的工具(我配置"启动谁、连谁");Server = 我把自己的工具暴露给别人。要"我的 Agent 用外部工具"就是 Client 方向。传输有 STDIO(把对方当子进程,管道通信)和 SSE/HTTP(对方是个网络服务)两种。
+
+3. **统一插头 ToolCallback 的回报**
+   外部 MCP 工具,经 `ToolCallbackProvider.getToolCallbacks()` 拿到的还是 `ToolCallback[]`——跟你自己 `buildTools()` 造的、跟 @Tool 方法的,**到 ChatClient 这层完全平权**,都用 `.toolCallbacks(...)` 挂。前面每关死磕 ToolCallback 这层抽象,在这里兑现:自己的工具和别人进程的工具无差别。
+
+4. **外部进程有它自己的安全边界**
+   filesystem server 自带白名单沙箱(只让访问启动时指定的目录),模型猜了个目录外路径 → server 回 `Access denied`。这跟你给 LocalFileTools 写的白名单是同一个 default-deny 思想,只不过这次守门的是别人的进程。**调外部工具失败,先分清是"集成坏了"还是"对方的规则拒了你"**——后者不是 bug。
+
+5. **Agent 自主纠错链(亲眼见证)**
+   模型猜路径→被拒→自己调 `list_allowed_directories` 问规则→学到允许目录→重调 `list_directory` 成功。多个外部工具被模型串成一条自我修正链,无需你编排。这就是 agentic loop 在真实外部工具上的样子。
+
+6. **Windows 跑 npx 的坑**:`command: npx` 直接喂 ProcessBuilder 会 `CreateProcess error=2`(npx 其实是 npx.cmd 脚本);用 `command: cmd` + `args: [/c, npx, ...]` 让真 exe `cmd` 去解释执行。
+
+---
+
+## 多 Agent · 双 Agent 协作(起草员 + 审查员)
+
+> 一句话:一个 Agent = 一个 ChatClient + 一句 system 角色提示词。多 Agent = 造多个不同角色的 ChatClient;编排 = 纯 Java 把 A 的输出喂进 B 的 user 输入。
+
+1. **Agent 的本质 = ChatClient + system 角色**
+   `builder.defaultSystem("你是…")` 那句就是给 Agent 定人格。要多 Agent 就多造几个 ChatClient bean,每个不同 `defaultSystem`。编排不需要新框架,就是普通 Java:`String draft = A.prompt(q).call().content();` 然后把 draft 拼进 B 的输入。
+
+2. **多个同类型 bean 共存:变量名 = bean 名**
+   加了 drafterAgent/reviewerAgent 后容器有 3 个 ChatClient。`@Autowired` 先按类型找,多个时**按变量名匹配 bean 名**:字段叫 `chatClient` 就命中名为 `chatClient` 的 bean。所以新 bean 起不同名 + 注入时变量名对齐,就不会撞。(autoconfigured `ChatClient.Builder` 是 prototype 作用域,每个 @Bean 方法拿到全新的,各设各的 system 不互相覆盖。)
+
+3. **`.call()` vs `.stream()`**
+   `.stream().content()` → `Flux<String>` 流式逐字(聊天 SSE 用);`.call().content()` → 一次性完整 `String`(编排用,要把整段喂下一个 Agent 必须等齐)。`prompt(x)` = `prompt().user(x)` 的快捷版;要再挂 advisors/tools/改 system 才用长版 `prompt().user(x).xxx()`。`.user()` 是库给的方法(设"用户那句话"),不用自己声明,跟 `.call()`/`.content()` 同源。
+
+4. **提示词 = 程序;歧义 = bug**
+   起草员初版提示 "write a draft of user's question" 有歧义→模型把问题重写了一遍而非作答;改成"直接写出一份简洁的**答案**初稿"→正常。**多 Agent 质量几乎全押在每个角色提示词清不清楚**,不押在中英文。语言上:大模型中英都行;你的 qwen2.5:7b 是中文母语级,中文不输甚至更顺;**一条提示词别混语言(7B 小模型对语言跳变敏感),提示词语言对齐想要的输出语言。**
+
+5. **多 Agent 的价值不是恒定的——看"第一遍有多容易错"**
+   初稿已经很好时,审查员加的价值有限(只润色),反而多花一倍时间。简单任务单 Agent 就够;**高风险/复杂任务(执行代码、多步推理、对外发布内容)第一遍易翻车,审查员才真救命**。判断力同"不是所有工具都该结构化返回":别无脑上,在"第一遍不可靠"处上。
+
+---

@@ -17,6 +17,20 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ChatClientConfig {
 
+    @Bean
+    public ChatClient drafterAgent(ChatClient.Builder builder){
+        return builder.defaultSystem("针对用户的问题,直接写出一份简洁的答案初稿")
+                .build();
+    }
+
+    @Bean
+    public ChatClient reviewerAgent(ChatClient.Builder
+                                            builder) {
+        return builder
+                .defaultSystem("You are a strict supervisor, the user " +
+                        "will give you a draft and a question,你要挑出初稿里的错误/遗漏/含糊之处,然后输出一份改进后 的最终答案")
+                                .build();
+    }
 
     TimeTools timeTools = new TimeTools();
     //WeatherTools weatherTools = new WeatherTools();
