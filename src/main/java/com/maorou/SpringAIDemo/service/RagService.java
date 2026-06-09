@@ -1,5 +1,6 @@
 package com.maorou.SpringAIDemo.service;
 
+import com.maorou.SpringAIDemo.utils.RagStatus;
 import com.maorou.SpringAIDemo.workspace.WorkspaceStrategy;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +49,7 @@ public class RagService {
         return vectorStore;
     }
 
-    public String reload() throws IOException {
+    public RagStatus reload() throws IOException {
         File dir = workspaceStrategy.ragDocsDir().toFile();
         List<Document> documents = new ArrayList<>();
 
@@ -66,36 +67,51 @@ public class RagService {
                 }
             }
         }
-
-        if (!documents.isEmpty()) {
-            TokenTextSplitter splitter =
-                    TokenTextSplitter.builder()
-                            .withChunkSize(80)
-                            .withMinChunkSizeChars(20)
-                            .withMinChunkLengthToEmbed(5)
-                            .withMaxNumChunks(100)
-                            .build();
-            List<Document> chunks = splitter.split(documents);
-
-            SimpleVectorStore newVectorStore = createEmptyVectorStore();
-            newVectorStore.add(chunks);
-
-            File storeFile = getStoreFile();
-            File parentDir = storeFile.getParentFile();
-            if (parentDir != null) {
-                parentDir.mkdirs();
-            }
-            newVectorStore.save(storeFile);
-            vectorStore = newVectorStore;
-            rawDocumentCount = documents.size();
-            chunkCount = chunks.size();
+        if (documents.isEmpty()) {
+            clearVectorStore();
+            log.info("No RAG documents found. Cleared vector store.");
+            return status();
         }
+
+
+        TokenTextSplitter splitter =
+                TokenTextSplitter.builder()
+                        .withChunkSize(80)
+                        .withMinChunkSizeChars(20)
+                        .withMinChunkLengthToEmbed(5)
+                        .withMaxNumChunks(100)
+                        .build();
+        List<Document> chunks = splitter.split(documents);
+
+        SimpleVectorStore newVectorStore = createEmptyVectorStore();
+        newVectorStore.add(chunks);
+
+        File storeFile = getStoreFile();
+        File parentDir = storeFile.getParentFile();
+        if (parentDir != null) {
+            parentDir.mkdirs();
+        }
+        newVectorStore.save(storeFile);
+        vectorStore = newVectorStore;
+        rawDocumentCount = documents.size();
+        chunkCount = chunks.size();
+
 
         return status();
     }
 
-    public String status() {
-        return "rawDocuments = " + rawDocumentCount + " chunks = " + chunkCount;
+    public RagStatus status() {
+        File storeFile = getStoreFile();
+
+        return new RagStatus(
+                rawDocumentCount,
+                chunkCount,
+                workspaceStrategy.getClass().getSimpleName(),
+                workspaceStrategy.ragDocsDir().toString(),
+                storeFile.getAbsolutePath(),
+                storeFile.exists(),
+                storeFile.exists() ? storeFile.length() : 0
+        );
     }
 
     public List<Document> search(String query) {
@@ -127,5 +143,15 @@ public class RagService {
 
     private File getStoreFile() {
         return workspaceStrategy.ragStoreFile().toFile();
+    }
+
+    private void clearVectorStore() throws IOException{
+        vectorStore = createEmptyVectorStore();
+        File storeFile = getStoreFile();
+        if (storeFile.exists()){
+            Files.delete(storeFile.toPath());
+        }
+        rawDocumentCount = 0;
+        chunkCount = 0;
     }
 }

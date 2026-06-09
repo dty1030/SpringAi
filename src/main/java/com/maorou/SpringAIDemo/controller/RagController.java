@@ -2,6 +2,7 @@ package com.maorou.SpringAIDemo.controller;
 
 import com.maorou.SpringAIDemo.service.RagService;
 import com.maorou.SpringAIDemo.utils.RagSearchResult;
+import com.maorou.SpringAIDemo.utils.RagStatus;
 import org.springframework.ai.document.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,12 +23,12 @@ public class RagController {
     RagService ragService;
 
     @GetMapping("/status")
-    public String status() {
+    public RagStatus status() {
         return ragService.status();
     }
 
     @PostMapping("/reload")
-    public String reload() throws IOException {
+    public RagStatus reload() throws IOException {
         return ragService.reload();
     }
 
