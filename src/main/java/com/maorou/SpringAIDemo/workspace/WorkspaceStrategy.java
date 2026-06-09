@@ -11,4 +11,6 @@ public interface WorkspaceStrategy {
     Path codeSandboxDir();
 
     Path allowedFileBaseDir();
+
+    Path dynamicToolsFile();
 }

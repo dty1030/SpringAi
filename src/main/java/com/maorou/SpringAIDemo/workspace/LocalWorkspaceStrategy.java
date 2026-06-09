@@ -30,4 +30,9 @@ public class LocalWorkspaceStrategy implements WorkspaceStrategy {
     public Path allowedFileBaseDir() {
         return baseDir;
     }
+
+    @Override
+    public Path dynamicToolsFile(){
+        return baseDir.resolve("math-tools.json");
+    }
 }
