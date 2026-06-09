@@ -1,0 +1,6 @@
+[
+  {"name": "add", "description": "Add two integers a and b", "expr": "#a + #b"},
+  {"name": "subtract", "description": "Subtract b from a", "expr": "#a - #b"},
+  {"name": "multiply", "description": "Multiply two integers a and b", "expr": "#a * #b"},
+  {"name": "power", "description": "Raise a to the power of b", "expr": "#a ^ #b"}
+]
