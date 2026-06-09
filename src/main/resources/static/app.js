@@ -7,6 +7,11 @@ const usernameEl = document.getElementById('username');
 const loginBtn = document.getElementById('login');
 const logoutBtn = document.getElementById('logout');
 const authStatusEl = document.getElementById('auth-status');
+const ragStatusBtn = document.getElementById('rag-status');
+const ragReloadBtn = document.getElementById('rag-reload');
+const ragSearchBtn = document.getElementById('rag-search');
+const ragQueryEl = document.getElementById('rag-query');
+const ragOutputEl = document.getElementById('rag-output');
 
 let conversationId = crypto.randomUUID();
 let authToken = localStorage.getItem('spring-ai-demo-token') || '';
@@ -128,9 +133,37 @@ async function sendMessage() {
     }
 }
 
+function showRagResult(data) {
+    ragOutputEl.textContent = JSON.stringify(data, null, 2);
+}
+
+async function loadRagStatus() {
+    const res = await fetch('/api/rag/status');
+    const data = await res.json();
+    showRagResult(data);
+}
+
+async function reloadRag() {
+    const res = await fetch('/api/rag/reload', { method: 'POST' });
+    const data = await res.json();
+    showRagResult(data);
+}
+
+async function searchRag() {
+    const query = ragQueryEl.value.trim();
+    if (!query) return;
+
+    const res = await fetch('/api/rag/search?query=' + encodeURIComponent(query));
+    const data = await res.json();
+    showRagResult(data);
+}
+
 loginBtn.addEventListener('click', login);
 logoutBtn.addEventListener('click', logout);
 sendBtn.addEventListener('click', sendMessage);
+ragStatusBtn.addEventListener('click', loadRagStatus);
+ragReloadBtn.addEventListener('click', reloadRag);
+ragSearchBtn.addEventListener('click', searchRag);
 
 inputEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {

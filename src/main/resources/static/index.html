@@ -99,6 +99,65 @@
             border-bottom-left-radius: 4px;
         }
 
+        .rag-debug {
+            border-top: 1px solid #eee;
+            background: #fafafa;
+            padding: 10px 16px;
+        }
+        .rag-debug-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+        }
+        .rag-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .rag-actions button,
+        #rag-search {
+            padding: 6px 10px;
+            font-size: 13px;
+            color: #555;
+            background: #f0f2f5;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .rag-actions button:hover,
+        #rag-search:hover { background: #e4e6eb; }
+        .rag-search {
+            display: flex;
+            gap: 8px;
+        }
+        #rag-query {
+            flex: 1;
+            padding: 7px 10px;
+            font-size: 13px;
+            font-family: inherit;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            outline: none;
+        }
+        #rag-query:focus { border-color: #0084ff; }
+        #rag-output {
+            margin-top: 8px;
+            max-height: 140px;
+            overflow: auto;
+            padding: 8px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            white-space: pre-wrap;
+        }
+
         .input-bar {
             display: flex;
             gap: 10px;
@@ -156,6 +215,23 @@
         </header>
 
         <main id="messages" class="messages"></main>
+        <section class="rag-debug">
+            <div class="rag-debug-header">
+                <span>RAG Debug</span>
+                <div class="rag-actions">
+                    <button id="rag-status">Status</button>
+                    <button id="rag-reload">Reload</button>
+                </div>
+            </div>
+
+            <div class="rag-search">
+                <input id="rag-query" type="text"
+                       placeholder="Search RAG..." />
+                <button id="rag-search">Search</button>
+            </div>
+
+            <pre id="rag-output"></pre>
+        </section>
 
         <footer class="input-bar">
             <select id="tool-mode" aria-label="Tool mode">
