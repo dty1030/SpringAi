@@ -14,6 +14,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -43,6 +44,9 @@ public class ChatController {
 
     @Autowired
     private RagService ragService;
+
+    @Autowired
+    ToolCallbackProvider toolCallbackProvider;
 
 
 
@@ -84,6 +88,9 @@ public class ChatController {
             prompt = prompt.tools(codeSandboxTools);
         } else if ("dyn".equals(req.toolMode())) {
             prompt = prompt.toolCallbacks(mathToolFactory.buildTools());
+        } else if ("mcp".equals(req.toolMode())) {
+            prompt = prompt.toolCallbacks(toolCallbackProvider.getToolCallbacks());
+
         }
         return prompt.stream().content();
     }

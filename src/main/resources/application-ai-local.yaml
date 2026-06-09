@@ -1,6 +1,24 @@
 spring:
 
   ai:
+    mcp:
+      client:
+        enabled: true
+        name: springai-demo
+        type: SYNC
+        request-timeout: 30s
+        toolcallback:
+          enabled: true
+        stdio:
+          connections:
+            filesystem:
+              command: cmd
+              args:
+                - "/c"
+                - "npx"
+                - "-y"
+                - "@modelcontextprotocol/server-filesystem"
+                - "D:\\ai-workspace"
     model:
       embedding: ollama
     ollama:
