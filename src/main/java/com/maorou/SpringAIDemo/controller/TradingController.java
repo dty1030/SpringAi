@@ -1,7 +1,9 @@
 package com.maorou.SpringAIDemo.controller;
 
 import com.maorou.SpringAIDemo.functions.StockDataClient;
+import com.maorou.SpringAIDemo.service.RagService;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,6 +26,8 @@ public class TradingController {
     ChatClient tradingDecisionAgent;
     @Autowired
     StockDataClient stockDataClient;
+    @Autowired
+    RagService ragService;
 
     @GetMapping("api/trading/analyze")
     public TradingReport analyze(@RequestParam String symbol){
@@ -75,5 +79,13 @@ public class TradingController {
 
     record TechnicalReport(String data, String analysis)
     {}
+
+
+    @GetMapping("/api/trading/fundamental-rag")
+    public String fundamentalRag(@RequestParam String symbol){
+        return fundamentalAnalystAgent.prompt("请基于研报资料,分析 " + symbol + "的基本面投资价值")
+                .advisors(QuestionAnswerAdvisor.builder(ragService.getVectorStore()).build())
+                .call().content();
+    }
 
 }
