@@ -100,3 +100,21 @@
    初稿已经很好时,审查员加的价值有限(只润色),反而多花一倍时间。简单任务单 Agent 就够;**高风险/复杂任务(执行代码、多步推理、对外发布内容)第一遍易翻车,审查员才真救命**。判断力同"不是所有工具都该结构化返回":别无脑上,在"第一遍不可靠"处上。
 
 ---
+
+## 多 Agent · 编排(主管自己挑专家:agent-as-tool)
+
+> 一句话:把每个专家 Agent 包装成一个 @Tool,交给一个"主管 Agent";主管的 agentic loop 自己根据任务决定调哪个专家。控制权从你的代码转移到模型。
+
+1. **流水线 vs 编排:谁决定流程**
+   流水线(双 Agent)= 你的 Java 代码写死"先 A 后 B",控制权在你。编排 = 主管 Agent 拿到任务自己判断派给谁,控制权在模型。区别全在一行 `.tools(agentTools)`:有它,调不调/调哪个/调几个由模型定;没它就是你手动 `.call()`。
+
+2. **agent-as-tool:专家 = ChatClient,包进 @Tool 的方法体**
+   `AgentTools` 里 `@Tool String translateToEnglish(...)` 的方法体就一行 `return translatorAgent.prompt(text).call().content()`——对主管是个普通工具,工具内部藏着一个专家 Agent。这是把"子 Agent"接入"主 Agent"的标准手法,复用了 @Tool + agentic loop 全部旧知识。
+
+3. **构造器注入 > 字段注入(能 final 的依赖优先)**
+   `AgentTools` 用构造器收两个 ChatClient:能 `private final`(造好即不可变)、依赖摆在签名一眼看全、可 `new AgentTools(a,b)` 脱离 Spring 测试、不存在半成品 null 态。单构造器时 Spring 自动注入,连 @Autowired 都不用写。**多个同类型 bean(这里 5 个 ChatClient)靠构造器参数名 = bean 名 精准认领**,同字段注入的"变量名=bean名"规则。
+
+4. **编排也有自己的"动态阶梯"(下一步)**
+   现在专家写死在源码 @Tool=多 Agent 的"L1"。同 L2 思路可把专家清单外置成 JSON(角色/描述都是字符串=数据)、用 FunctionToolCallback 动态造、/reload 热加、甚至专家是远程服务/MCP(=L3)。**Agent 的 system 提示词就是数据,整条 L1→L3 阶梯对 Agent 同样适用。**
+
+---

@@ -32,6 +32,23 @@ public class ChatClientConfig {
                                 .build();
     }
 
+    @Bean
+    public ChatClient translatorAgent(ChatClient.Builder builder){
+        return builder.defaultSystem("你是翻译专家,把收到的文本准确翻译成英文,只输出译文").build();
+    }
+
+    @Bean
+    public ChatClient poetAgent(ChatClient.Builder
+                                        builder) {
+        return builder.defaultSystem("你是诗人,根据收到的主题写一首简短的中文现代诗").build();
+    }
+
+    @Bean
+    public ChatClient orchestratorAgnet(ChatClient.Builder builder){
+        return builder.defaultSystem("你是一个任务协调者。你手下有若干专家工具,请根 据用户的需求," +
+                "选择并调用最合适的专家工具来完成任务,然后把专家的结果整理后返回。" +
+                "需要专家处理的部分,不要自己直接回答,必须交给对应的工具。").build();
+    }
     TimeTools timeTools = new TimeTools();
     //WeatherTools weatherTools = new WeatherTools();
 
