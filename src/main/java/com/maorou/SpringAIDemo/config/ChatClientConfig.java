@@ -49,6 +49,45 @@ public class ChatClientConfig {
                 "选择并调用最合适的专家工具来完成任务,然后把专家的结果整理后返回。" +
                 "需要专家处理的部分,不要自己直接回答,必须交给对应的工具。").build();
     }
+
+    @Bean
+    public ChatClient
+    technicalAnalystAgent(ChatClient.Builder builder) {
+        return builder.defaultSystem("你是一个技术面分析师:从均线/趋势/量价/支撑阻力等技术角度,简短分析给定股票,只谈技术面").build();
+    }
+
+    @Bean
+    public ChatClient
+    fundamentalAnalystAgent(ChatClient.Builder builder) {
+        return
+                builder.defaultSystem("你是一个基本面分析师, 从业绩/估值/盈利能力/行业地位角度分析,只谈基本面").build();
+    }
+
+    @Bean
+    public ChatClient newsAnalystAgent(ChatClient.Builder
+                                               builder) {
+        return builder.defaultSystem("从近期事件、政策,市场情绪角度分析一下这只股票").build();
+    }
+
+    @Bean
+    public ChatClient
+    bullResearcherAgent(ChatClient.Builder builder) {
+        return builder.defaultSystem("【看多研究员:你会收到一只股票和几份分析。你的唯一职责是【只找上涨/看多的 理由】,尽力论证它会涨,绝不提任何利空").build();
+    }
+
+    @Bean
+    public ChatClient
+    bearResearcherAgent(ChatClient.Builder builder) {
+        return builder.defaultSystem("你会收 到一只股票和几份分析。你的唯一职责是只找下跌/看空的理由,尽力论证它有风险会跌,绝不提任何利好").build();
+    }
+
+    @Bean
+    public ChatClient
+    tradingDecisionAgent(ChatClient.Builder builder) {
+        return builder.defaultSystem("你会收到三份分析 + 看多看空双方的辩论。综合所有信息,给出最终结论:方向(看 多/看空/观望)、核心理由、主要风险、置信度】").build();
+    }
+
+
     TimeTools timeTools = new TimeTools();
     //WeatherTools weatherTools = new WeatherTools();
 
