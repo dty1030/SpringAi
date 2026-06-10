@@ -139,3 +139,21 @@
    当前多空各看分析说一遍、互不反驳。进阶=让两方来回几轮互相拆台(或竞争打分只采纳更优的)。先 V1 跑通再加轮次——别一口吃成胖子。
 
 ---
+
+## Java ↔ Python 打通(大目标·阶段六)
+
+> 一句话:Java 用裸 RestTemplate 直连 Python 的 HTTP 接口,把 JSON 文本喂给 Agent,让它基于真数据分析。数据跨语言跨进程:akshare→pandas→FastAPI→HTTP→RestTemplate→Agent prompt。
+
+1. **RestTemplate = "我去调别人";@RestController = "别人来调我"**
+   两个相反方向。`restTemplate.getForObject(url, String.class, arg)` = 发 GET、把响应体当 String 拿回。占位符 `{x}` 自动 URL 编码(别裸拼用户输入进 URL)。
+
+2. **非 Nacos 的外部 URL 必须用裸 `new RestTemplate()`,不能 Feign/@LoadBalanced**
+   Python 服务没注册 Nacos,只是 `localhost:8000`。@LoadBalanced/Feign 会拿 host 当服务名去 Nacos 查→炸。规则同天气工具调 wttr.in:外部真实 URL 用裸 RestTemplate。
+
+3. **JSON 在网线上永远是文本;"变成 String" vs "解析成对象"是你的选择**
+   `getForObject(url, String.class)`=原样拿 JSON 文本(Java 不解析);`getForObject(url, Dto[].class)`=Jackson 把文本解析成对象。**最终读者是 LLM 时,直接拿 String 喂它最省事——LLM 自己会读 JSON,省掉建 DTO**。只有 Java 自己要算这些数字时才需解析成对象。
+
+4. **"喂真数据"= 把外部数据拼进 prompt,让 Agent 落地到事实**
+   阶段三技术面 Agent 只收股票名→脑补假数字(茅台说成 200~500 元);阶段六把真实 MA5/涨跌幅 JSON 拼进 prompt→它引用 1267.14、+3.92% 等真值。**RAG/工具/外部服务本质都是"给 LLM 喂它没有的事实",减少幻觉。**
+
+---

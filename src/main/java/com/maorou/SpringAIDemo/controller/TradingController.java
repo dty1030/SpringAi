@@ -1,5 +1,6 @@
 package com.maorou.SpringAIDemo.controller;
 
+import com.maorou.SpringAIDemo.functions.StockDataClient;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +22,8 @@ public class TradingController {
     ChatClient bearResearcherAgent;
     @Autowired
     ChatClient tradingDecisionAgent;
+    @Autowired
+    StockDataClient stockDataClient;
 
     @GetMapping("api/trading/analyze")
     public TradingReport analyze(@RequestParam String symbol){
@@ -55,5 +58,22 @@ public class TradingController {
 
 
 
+    @GetMapping("/api/trading/technical-real")
+    public TechnicalReport technicalReal(@RequestParam String symbol){
+
+        //1.拿真实JSON
+        String data = stockDataClient.getIndicators(symbol);
+        //2.塞进Agent
+        String analysis = technicalAnalystAgent.prompt(
+                "这是股票 " + symbol +
+                        "最近的真实指标数据(JSON格式):\n" + data +
+                        "\n请基于这些真实数字做完整的技术面分析,并且在分析中引用具体数值。")
+                .call().content();
+        return new TechnicalReport(data, analysis);
+    }
+
+
+    record TechnicalReport(String data, String analysis)
+    {}
 
 }
