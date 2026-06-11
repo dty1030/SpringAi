@@ -28,6 +28,8 @@ public class TradingController {
     StockDataClient stockDataClient;
     @Autowired
     RagService ragService;
+    @Autowired ChatClient riskControlAgent;
+    @Autowired ChatClient retrospectiveAgent;
 
     @GetMapping("api/trading/analyze")
     public TradingReport analyze(@RequestParam String symbol){
@@ -87,5 +89,49 @@ public class TradingController {
                 .advisors(QuestionAnswerAdvisor.builder(ragService.getVectorStore()).build())
                 .call().content();
     }
+
+    @GetMapping("/api/trading/full")
+    public FullReport full(@RequestParam String code, @RequestParam String name){
+        String data = stockDataClient.getIndicators(code);
+        String technical = technicalAnalystAgent.prompt(
+                "股票" + name + " 近期真实指标(JSON):\n" +
+                        data + "\n请基于这些真实数字做技术面分析")
+                .call().content();
+
+        //2. 基本面: RAG 研报
+        String fundamental = fundamentalAnalystAgent.prompt("请基于研报资料分析 " + name + " 的基本面")
+                .advisors(QuestionAnswerAdvisor.builder(ragService.getVectorStore()).build())
+                .call().content();
+        //3. 新闻面 TODO : 接入真实新闻源
+        String news = newsAnalystAgent.prompt(name).call().content();
+        //4. 汇总三部分分析
+        String analyses = "股票:" + name
+                + "\n【技术面】" + technical
+                + "\n【基本面】" + fundamental
+                + "\n【新闻面】" + news;
+        //5. 多空辩论
+        String bull = bullResearcherAgent.prompt(analyses).call().content();
+        String bear = bearResearcherAgent.prompt(analyses).call().content();
+        String debate = analyses +"\n【看多方】" + bull +"\n【看空方】" + bear;
+        //6. 风控
+        String risk = riskControlAgent.prompt(debate).call().content();
+        // 7. 决策:综合辩论 + 风控
+        String decision = tradingDecisionAgent.prompt(debate + "\n【风控】" + risk).call().content();
+        //8. 复盘
+        String retrospective = retrospectiveAgent.prompt("辩论: " + debate
+                + "\n风控: " + risk
+                + "\n决策: " + decision)
+                .call().content();
+        return new FullReport(technical, fundamental, news,
+                bull, bear, risk,
+                decision, retrospective);
+
+    }
+
+
+
+    record FullReport(String technical, String fundamental, String news,
+                      String bull, String bear, String risk,
+                      String decision, String retrospective){}
 
 }

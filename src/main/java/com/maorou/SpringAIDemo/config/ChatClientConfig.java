@@ -87,6 +87,22 @@ public class ChatClientConfig {
         return builder.defaultSystem("你会收到三份分析 + 看多看空双方的辩论。综合所有信息,给出最终结论:方向(看 多/看空/观望)、核心理由、主要风险、置信度】").build();
     }
 
+    @Bean
+    public ChatClient
+    riskControlAgent(ChatClient.Builder builder)
+    {
+        return builder.defaultSystem("你会收到分析和多空辩论。专门评估这笔交易的风险——最大回撤、需注意的风险点、建议仓位上限。不谈 机会,只谈风险控制").build();
+    }
+
+    @Bean
+    public ChatClient
+    retrospectiveAgent(ChatClient.Builder
+                               builder) {
+        return
+                builder.defaultSystem("复盘官:你会收到一条完整的决策链(分析→辩论→风控→决策)。你的职责是[评价这次决策的逻辑质量]——推理是否严谨?有没 有自相矛盾或遗漏的角度?证据是否支撑结论?不重 新做决策,只评判决策的过程好不好").build()
+                ;
+    }
+
 
     TimeTools timeTools = new TimeTools();
     //WeatherTools weatherTools = new WeatherTools();
