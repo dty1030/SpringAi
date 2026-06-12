@@ -26,6 +26,11 @@ public class CodeSandboxTools {
     public String runJavaCode(
             @ToolParam(description = "Complete Java source code. It must define a public class named Main.")
             String code) {
+
+        String validationError = validateCode(code);
+        if (validationError != null) {
+            return validationError;
+        }
         try {
             // Use a fixed workspace so generated code never runs from the project directory.
             Path sandboxDir = workspaceStrategy.codeSandboxDir();
@@ -96,5 +101,33 @@ public class CodeSandboxTools {
             return text;
         }
         return text.substring(0, MAX_OUTPUT_LENGTH) + "\n... output truncated ...";
+    }
+
+    private String validateCode(String code) {
+        if (code == null || code.isBlank()) {
+            return "Code is empty.";
+        }
+
+        // Block APIs that can escape the sandbox or access local files.
+        String[] blockedPatterns = {
+                "Runtime.getRuntime",
+                "ProcessBuilder",
+                "System.exit",
+                "System.getProperty",
+                "System.getenv",
+                "java.io.File",
+                "java.nio.file.Files",
+                "java.nio.file.Path",
+                "newFile(",
+                "Files.",
+                "Path."
+        };
+        String normalizedCode = code.replaceAll("\\s+", "");
+        for (String pattern : blockedPatterns) {
+            if (normalizedCode.contains(pattern)) {
+                return "Blocked unsafe Java API: " + pattern;
+            }
+        }
+        return null;
     }
 }
