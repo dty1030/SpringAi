@@ -1,5 +1,6 @@
 package com.maorou.SpringAIDemo.functions;
 
+import com.maorou.SpringAIDemo.utils.CodeRunResult;
 import com.maorou.SpringAIDemo.workspace.WorkspaceStrategy;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -23,13 +24,15 @@ public class CodeSandboxTools {
     }
 
     @Tool(description = "Run a small Java program in a restricted local sandbox directory.")
-    public String runJavaCode(
+    public CodeRunResult runJavaCode(
             @ToolParam(description = "Complete Java source code. It must define a public class named Main.")
             String code) {
 
         String validationError = validateCode(code);
         if (validationError != null) {
-            return validationError;
+            return new CodeRunResult(false, "validate",
+                    null, "",
+                    validationError);
         }
         try {
             // Use a fixed workspace so generated code never runs from the project directory.
@@ -48,7 +51,9 @@ public class CodeSandboxTools {
             int compileExitCode = compileProcess.waitFor();
             String compileError = readProcessError(compileProcess);
             if (compileExitCode != 0) {
-                return "Java compile failed.\n" + limitOutput(compileError);
+                return new CodeRunResult(false, "compile",
+                        compileExitCode, "", limitOutput(compileError)
+                );
             }
 
             // Run the compiled Main class from the same sandbox directory.
@@ -60,19 +65,44 @@ public class CodeSandboxTools {
             boolean finished = runProcess.waitFor(RUN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!finished) {
                 runProcess.destroyForcibly();
-                return "Java run timeout.";
+                return new CodeRunResult(
+                        false,
+                        "timeout",
+                        null,
+                        "",
+                        "Java run timeout."
+                );
+
             }
 
             int runExitCode = runProcess.exitValue();
             String output = readProcessOutput(runProcess);
             String error = readProcessError(runProcess);
             if (runExitCode != 0) {
-                return "Java run failed.\n" + limitOutput(error);
+                return new CodeRunResult(
+                        false,
+                        "run",
+                        runExitCode,
+                        limitOutput(output),
+                        limitOutput(error)
+                );
             }
 
-            return "Java run success.\nOutput:\n" + limitOutput(output);
+            return new CodeRunResult(
+                    true,
+                    "run",
+                    runExitCode,
+                    limitOutput(output),
+                    ""
+            );
         } catch (Exception e) {
-            return "Execution failed: " + e.getMessage();
+            return new CodeRunResult(
+                    false,
+                    "exception",
+                    null,
+                    "",
+                    String.valueOf(e.getMessage())
+            );
         }
     }
 
