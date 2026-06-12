@@ -102,8 +102,12 @@ public class TradingController {
         String fundamental = fundamentalAnalystAgent.prompt("请基于研报资料分析 " + name + " 的基本面")
                 .advisors(QuestionAnswerAdvisor.builder(ragService.getVectorStore()).build())
                 .call().content();
-        //3. 新闻面 TODO : 接入真实新闻源
-        String news = newsAnalystAgent.prompt(name).call().content();
+        //3. 新闻面
+        String newsJson = stockDataClient.getNews(code, name);
+        String news = newsAnalystAgent.prompt(
+                "以下是股票 " + name + " 最近的真实新闻(JSON):\n" + newsJson +
+                        "\n请基于这些真实新闻做新闻面与市场情绪分析,引用具体事件。")
+                .call().content();
         //4. 汇总三部分分析
         String analyses = "股票:" + name
                 + "\n【技术面】" + technical

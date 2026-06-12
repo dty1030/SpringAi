@@ -224,3 +224,21 @@
    transcript 每轮变长,后续调用更慢更贵。`@RequestParam(defaultValue="2") int rounds` 暴露成参数,按需加轮。
 
 ---
+
+## 多源真新闻接入(新闻面落地 + 聚合层设计)
+
+> 一句话:Python 端 /news 聚合多个新闻源(归一化+单源容错+关键词筛行),Java 端 getNews 拿 JSON 喂新闻分析师——Agent 从"凭旧印象谈政策"变成"评论昨天的股东大会"。
+
+1. **聚合层三件套**:① **归一化**——各源列名不同(新闻标题/标题/内容),聚合层统一成一个 schema(来源/时间/标题),≈把杂牌 API 适配成同一个 DTO;② **单源 try/except 容错**——一个源挂/空,贡献零但不带崩端点(Resilience4j fallback 思想的微缩版);③ **全市场快讯按关键词筛行**,0 条命中是正常空结果不是 bug。
+
+2. **pandas 筛行(新)**:`df[df["内容"].str.contains(name)]` —— 条件算出一列布尔,`df[布尔列]`=只留 True 行。**同样的方括号:放列名列表=选列,放布尔列=筛行。**
+
+3. **pandas 操作"产新不改旧",必须用 = 接住**(连踩五次的根因):`df[...]`/`.head()` 都返回新 DataFrame,原 df 纹丝不动——**跟 Java String 一模一样**(`s.toUpperCase()` 不接=白调)。粗规则:几乎所有 df 操作都要 `df = ...`。区分"产新"(要接)vs"改自己"(`list.append` 不用接)。
+
+4. **Python 断行规矩**:换行=语句结束(没有分号),`for r in` 后断行=SyntaxError;**括号 ()[]{}  内可随意换行**。
+
+5. **venv vs 全局 Python = 两个世界**:裸敲 `python` 指向谁看 PATH;两个解释器=两套包+可能两个服务进程。实测踩坑:全局 python 起的旧 uvicorn 占着 8000 接活,venv 实例空喊 Reloading——**"改了代码行为没变"排查清单第三条:是不是别的进程实例在接活**(`Get-NetTCPConnection -LocalPort`)。保险:写全 venv python 路径或确认 `(.venv)` 前缀。
+
+6. **API 面目每版不同,探测>教程**:akshare 财联社接口 404(=对方路径没了,库滞后,≠网络被掐)、`stock_telegraph_cls` 在这版根本不存在(AttributeError);同一家的不同接口网络命运可不同(东财行情被掐、东财新闻通)。**先 probe 再写代码。**
+
+---

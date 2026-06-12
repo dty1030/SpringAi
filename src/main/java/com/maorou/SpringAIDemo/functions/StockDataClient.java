@@ -7,12 +7,18 @@ import org.springframework.web.client.RestTemplate;
 public class StockDataClient {
 
     private final RestTemplate restTemplate = new RestTemplate();
-    public String getIndicators(String symbol){
+    public String getNews(String symbol, String name){
+        return restTemplate.getForObject(
+                "http://localhost:8000/news?symbol={symbol}&name={name}",
+                String.class,
+                symbol, name
+
+        );
+    }
+    public String getIndicators(String symbol) {
         return restTemplate.getForObject(
                 "http://localhost:8000/indicators?symbol={symbol}",
                 String.class,
-                symbol
-
-        );
+                symbol);
     }
 }
