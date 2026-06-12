@@ -197,6 +197,15 @@
             border-radius: 20px;
             cursor: pointer;
         }
+        #trading-output {
+            margin-top: 8px; max-height: 320px; overflow:
+                auto;
+            padding: 8px; font-size: 12px; line-height:
+                1.5;
+            background: #fff; border: 1px solid #eee;
+            border-radius: 6px;
+            white-space: pre-wrap;
+        }
         #send:hover { background: #0073e0; }
         #send:disabled { background: #a0c8f0; cursor: not-allowed; }
     </style>
@@ -231,6 +240,26 @@
             </div>
 
             <pre id="rag-output"></pre>
+        </section>
+        <section class="rag-debug">
+            <div class="rag-debug-header">
+                <span>Trading Research</span>
+                <div class="rag-actions">
+                    <button
+                            id="trading-full">完整流水线</button>
+                    <button
+                            id="trading-debate">多轮辩论</button>
+                </div>
+            </div>
+            <div class="rag-search">
+                <input id="trading-code" type="text"
+                       value="sh600519" placeholder="代码 如 sh600519"
+                />
+                <input id="trading-name" type="text"
+                       value="贵州茅台" placeholder="名称 如 贵州茅台"
+                />
+            </div>
+            <pre id="trading-output"></pre>
         </section>
 
         <footer class="input-bar">

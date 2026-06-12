@@ -12,6 +12,18 @@ const ragReloadBtn = document.getElementById('rag-reload');
 const ragSearchBtn = document.getElementById('rag-search');
 const ragQueryEl = document.getElementById('rag-query');
 const ragOutputEl = document.getElementById('rag-output');
+const tradingCodeEl =
+    document.getElementById('trading-code');
+const tradingNameEl =
+    document.getElementById('trading-name');
+const tradingFullBtn =
+    document.getElementById('trading-full');
+const tradingDebateBtn =
+    document.getElementById('trading-debate');
+const tradingOutputEl =
+    document.getElementById('trading-output');
+
+
 
 let conversationId = crypto.randomUUID();
 let authToken = localStorage.getItem('spring-ai-demo-token') || '';
@@ -136,7 +148,15 @@ async function sendMessage() {
 function showRagResult(data) {
     ragOutputEl.textContent = JSON.stringify(data, null, 2);
 }
-
+function showTradingResult(data) {
+    let text = '';
+    for (const [key, value] of
+        Object.entries(data)) {
+        text += '====== ' + key + ' ======\n' +
+            value + '\n\n';
+    }
+    tradingOutputEl.textContent = text;
+}
 async function loadRagStatus() {
     const res = await fetch('/api/rag/status');
     const data = await res.json();
@@ -157,6 +177,49 @@ async function searchRag() {
     const data = await res.json();
     showRagResult(data);
 }
+async function runFull() {
+    const code = tradingCodeEl.value.trim();
+    const name = tradingNameEl.value.trim();
+    tradingOutputEl.textContent = '8 个 Agent接力分析中,约 2-3 分钟,别刷新...';
+    tradingFullBtn.disabled = true;          // ← loading 状态:按钮变灰防连点
+    try {
+        // 【你写】fetch /api/trading/full,带code 和 name 两个参数
+        const res = await fetch('/api/trading/full?code=' + encodeURIComponent(code)
+        + '&name=' + encodeURIComponent(name));
+        //   提示:参数要 encodeURIComponent(...)它就是你在 PowerShell 学的
+        //   EscapeDataString 的 JS 版,中文进 URL必须编码
+        // 【你写】res.json() 拿数据,交给
+        const data = await res.json();
+        showTradingResult(data);
+    } catch (e) {
+        tradingOutputEl.textContent = 'Error: ' +
+            e.message;
+    } finally {
+        tradingFullBtn.disabled = false;     // ←无论成败都恢复按钮(finally 兜底)
+    }
+}
+
+async function runDebate() {
+    const code = tradingCodeEl.value.trim();
+    const name = tradingNameEl.value.trim();
+    tradingOutputEl.textContent = '8 个 Agent接力分析中,约 2-3 分钟,别刷新...';
+    tradingDebateBtn.disabled = true;          // ← loading 状态:按钮变灰防连点
+    try {
+        // 【你写】fetch /api/trading/full,带code 和 name 两个参数
+        const res = await fetch('/api/trading/debate?name=' + encodeURIComponent(name)
+            + '&rounds=2');
+        //   提示:参数要 encodeURIComponent(...)它就是你在 PowerShell 学的
+        //   EscapeDataString 的 JS 版,中文进 URL必须编码
+        // 【你写】res.json() 拿数据,交给
+        const data = await res.json();
+        showTradingResult(data);
+    } catch (e) {
+        tradingOutputEl.textContent = 'Error: ' +
+            e.message;
+    } finally {
+        tradingDebateBtn.disabled = false;     // ←无论成败都恢复按钮(finally 兜底)
+    }
+}
 
 loginBtn.addEventListener('click', login);
 logoutBtn.addEventListener('click', logout);
@@ -164,7 +227,10 @@ sendBtn.addEventListener('click', sendMessage);
 ragStatusBtn.addEventListener('click', loadRagStatus);
 ragReloadBtn.addEventListener('click', reloadRag);
 ragSearchBtn.addEventListener('click', searchRag);
-
+tradingFullBtn.addEventListener('click',
+    runFull);
+tradingDebateBtn.addEventListener('click',
+    runDebate);
 inputEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
