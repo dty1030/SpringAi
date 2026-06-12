@@ -144,7 +144,23 @@
             outline: none;
         }
         #rag-query:focus { border-color: #0084ff; }
-        #rag-output {
+        #code-input {
+            width: 100%;
+            min-height: 120px;
+            resize: vertical;
+            padding: 8px;
+            font-size: 12px;
+            line-height: 1.4;
+            font-family: Consolas, "Courier New", monospace;
+            color: #222;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            outline: none;
+        }
+        #code-input:focus { border-color: #0084ff; }
+        #rag-output,
+        #code-output {
             margin-top: 8px;
             max-height: 140px;
             overflow: auto;
@@ -240,6 +256,22 @@
             </div>
 
             <pre id="rag-output"></pre>
+        </section>
+        <section class="rag-debug">
+            <div class="rag-debug-header">
+                <span>Code Debug</span>
+                <div class="rag-actions">
+                    <button id="code-run">Run</button>
+                </div>
+            </div>
+
+            <textarea id="code-input" spellcheck="false">public class Main {
+    public static void main(String[] args) {
+        System.out.println(1 + 2);
+    }
+}</textarea>
+
+            <pre id="code-output"></pre>
         </section>
         <section class="rag-debug">
             <div class="rag-debug-header">

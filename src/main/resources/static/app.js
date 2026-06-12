@@ -12,6 +12,9 @@ const ragReloadBtn = document.getElementById('rag-reload');
 const ragSearchBtn = document.getElementById('rag-search');
 const ragQueryEl = document.getElementById('rag-query');
 const ragOutputEl = document.getElementById('rag-output');
+const codeInputEl = document.getElementById('code-input');
+const codeRunBtn = document.getElementById('code-run');
+const codeOutputEl = document.getElementById('code-output');
 const tradingCodeEl =
     document.getElementById('trading-code');
 const tradingNameEl =
@@ -148,6 +151,11 @@ async function sendMessage() {
 function showRagResult(data) {
     ragOutputEl.textContent = JSON.stringify(data, null, 2);
 }
+
+function showCodeResult(data) {
+    codeOutputEl.textContent = JSON.stringify(data, null, 2);
+}
+
 function showTradingResult(data) {
     let text = '';
     for (const [key, value] of
@@ -177,6 +185,43 @@ async function searchRag() {
     const data = await res.json();
     showRagResult(data);
 }
+
+async function runCodeDirect() {
+    const code = codeInputEl.value.trim();
+    if (!code) return;
+
+    if (!authToken) {
+        codeOutputEl.textContent = 'Please login before running code.';
+        return;
+    }
+
+    codeOutputEl.textContent = 'Running...';
+    codeRunBtn.disabled = true;
+
+    try {
+        const res = await fetch('/api/code/run', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + authToken
+            },
+            body: JSON.stringify({ code })
+        });
+
+        if (!res.ok) {
+            codeOutputEl.textContent = 'Request failed: HTTP ' + res.status;
+            return;
+        }
+
+        const data = await res.json();
+        showCodeResult(data);
+    } catch (e) {
+        codeOutputEl.textContent = 'Error: ' + e.message;
+    } finally {
+        codeRunBtn.disabled = false;
+    }
+}
+
 async function runFull() {
     const code = tradingCodeEl.value.trim();
     const name = tradingNameEl.value.trim();
@@ -227,6 +272,7 @@ sendBtn.addEventListener('click', sendMessage);
 ragStatusBtn.addEventListener('click', loadRagStatus);
 ragReloadBtn.addEventListener('click', reloadRag);
 ragSearchBtn.addEventListener('click', searchRag);
+codeRunBtn.addEventListener('click', runCodeDirect);
 tradingFullBtn.addEventListener('click',
     runFull);
 tradingDebateBtn.addEventListener('click',

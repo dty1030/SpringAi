@@ -7,4 +7,8 @@ public interface AuthService {
 
     CurrentUser authenticate(HttpServletRequest httpRequest,
                              ChatRequest chatRequest);
+
+    default CurrentUser authenticate(HttpServletRequest httpRequest) {
+        return authenticate(httpRequest, null);
+    }
 }

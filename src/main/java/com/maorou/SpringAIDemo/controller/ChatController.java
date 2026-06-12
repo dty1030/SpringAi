@@ -4,6 +4,7 @@ package com.maorou.SpringAIDemo.controller;
 import com.maorou.SpringAIDemo.ChatRequest;
 import com.maorou.SpringAIDemo.auth.AuthService;
 import com.maorou.SpringAIDemo.auth.CurrentUser;
+import com.maorou.SpringAIDemo.auth.ToolAccessPolicy;
 import com.maorou.SpringAIDemo.functions.CodeSandboxTools;
 import com.maorou.SpringAIDemo.functions.LocalFileTools;
 import com.maorou.SpringAIDemo.functions.MathToolFactory;
@@ -43,6 +44,9 @@ public class ChatController {
     AuthService authService;
 
     @Autowired
+    ToolAccessPolicy toolAccessPolicy;
+
+    @Autowired
     private RagService ragService;
 
     @Autowired
@@ -59,7 +63,7 @@ public class ChatController {
         CurrentUser currentUser = authService.authenticate(httpRequest, req);
         String toolMode = req.toolMode();
         String role = currentUser.role();
-        if (!isToolAllowed(role, toolMode)) {
+        if (!toolAccessPolicy.isToolAllowed(role, toolMode)) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "Access denied: role " + role + " cannot use toolMode " + toolMode
@@ -93,17 +97,5 @@ public class ChatController {
 
         }
         return prompt.stream().content();
-    }
-
-    private boolean isToolAllowed(String role, String toolMode) {
-        if ("admin".equals(role)) {
-            return true;
-        }
-        if ("trusted".equals(role)) {
-            return "none".equals(toolMode) || "time".equals(toolMode) || "rag".equals(toolMode) || "file".equals(toolMode);
-        }
-        return "none".equals(toolMode)
-                || "time".equals(toolMode)
-                || "rag".equals(toolMode);
     }
 }
