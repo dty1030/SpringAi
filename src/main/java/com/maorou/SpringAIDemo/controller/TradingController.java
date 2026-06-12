@@ -134,4 +134,48 @@ public class TradingController {
                       String bull, String bear, String risk,
                       String decision, String retrospective){}
 
+
+    @GetMapping("/api/trading/debate")
+    public DebateReport debate(@RequestParam String name,
+                               @RequestParam(defaultValue = "2") int rounds){
+        //简略版
+        String technical = technicalAnalystAgent.prompt(name).call().content();
+
+        String fundamental = fundamentalAnalystAgent.prompt(name).call().content();
+
+        String news = newsAnalystAgent.prompt(name).call().content();
+
+        String analyses = "股票:" + name
+                + "\n[技术面] " + technical
+                + "\n[基本面] " + fundamental
+                + "\n[新闻面] " + news;
+
+        //transcript : 一份不断增长的辩论记录
+        String transcript = analyses;
+
+        for(int round = 1; round <= rounds; round++){
+            String task = (round == 1) ? "请基于以上分析,提出你的看多核心论点(开场陈述)"
+                    : "请反驳看空方最新的观点,并强化你的看多立场";
+            String bull =
+                    bullResearcherAgent.prompt(transcript + "\n\n第"
+                                    + round + "轮 看多发言:" + task)
+                            .call().content();
+            transcript += "\n\n[看多·第" + round + "轮]" + bull;
+            // 【你写】看空方:读(已含看多本轮的)transcript,反驳看多
+            String bear = bearResearcherAgent.prompt(
+                    transcript + "这是股票的相关技术面, 基本面, 新闻面的分析第" + round
+                            + "轮,\n" + "请你根据分析,反驳看多").call().content();
+            transcript += "\n\n[看空·第" + round + "轮]"+ bear;
+
+
+
+        }
+        // 决策读完整多轮辩论记录
+        String decision = tradingDecisionAgent.prompt(
+                        transcript + "\n\n请基于以上多轮辩论,给出最终决策(方向/理由/风险/置信度)")
+                .call().content();
+        return new DebateReport(transcript, decision);}
+
+
+    record DebateReport(String transcript, String decision) {}
 }
