@@ -24,7 +24,7 @@ spring:
     ollama:
       embedding:
         options:
-          model: nomic-embed-text
+          model: bge-m3
   cloud:
     nacos:
       config:
