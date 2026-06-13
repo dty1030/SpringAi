@@ -1,12 +1,18 @@
 package com.maorou.SpringAIDemo.controller;
 
+import com.knuddels.jtokkit.Encodings;
+import com.knuddels.jtokkit.api.Encoding;
+import com.knuddels.jtokkit.api.EncodingType;
+import com.knuddels.jtokkit.api.IntArrayList;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -14,6 +20,28 @@ public class NlpController {
 
     @Autowired
     EmbeddingModel embeddingModel;
+
+
+    private final Encoding enc = Encodings.newDefaultEncodingRegistry()
+            .getEncoding(EncodingType.CL100K_BASE);
+
+    @GetMapping("/api/nlp/tokenize")
+    public Map<String, Object> tokenize(@RequestParam String text){
+        IntArrayList ids = enc.encode(text);
+
+        List<String> pieces = new ArrayList<>();
+        for (int i = 0; i< ids.size(); i++){
+            IntArrayList one = new IntArrayList();
+            one.add(ids.get(i));
+            pieces.add(enc.decode(one));
+        }
+        return Map.of(
+                "text", text,
+                "token数", ids.size(),
+                "token_ids", ids.boxed(),
+                "每个token的片段", pieces
+        );
+    }
 
     @GetMapping("/api/nlp/similarity")
     public Map<String, Object> similarity(@RequestParam String a, @RequestParam String b){
