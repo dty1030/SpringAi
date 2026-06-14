@@ -7,6 +7,8 @@ const usernameEl = document.getElementById('username');
 const loginBtn = document.getElementById('login');
 const logoutBtn = document.getElementById('logout');
 const authStatusEl = document.getElementById('auth-status');
+const navItems = document.querySelectorAll('.nav-item');
+const viewEls = document.querySelectorAll('.view');
 const ragStatusBtn = document.getElementById('rag-status');
 const ragReloadBtn = document.getElementById('rag-reload');
 const ragSearchBtn = document.getElementById('rag-search');
@@ -39,6 +41,16 @@ function updateAuthStatus() {
         return;
     }
     authStatusEl.textContent = 'Not logged in';
+}
+
+function switchView(viewName) {
+    navItems.forEach((item) => {
+        item.classList.toggle('active', item.dataset.view === viewName);
+    });
+
+    viewEls.forEach((view) => {
+        view.classList.toggle('active', view.id === 'view-' + viewName);
+    });
 }
 
 function addMessage(text, sender) {
@@ -156,15 +168,59 @@ function showCodeResult(data) {
     codeOutputEl.textContent = JSON.stringify(data, null, 2);
 }
 
+function formatTradingValue(value) {
+    if (typeof value === 'string') {
+        return value;
+    }
+
+    return JSON.stringify(value, null, 2);
+}
+
 function showTradingResult(data) {
-    let text = '';
+    if (!data || Object.keys(data).length === 0) {
+        tradingOutputEl.textContent = '没有收到交易研究结果。';
+        return;
+    }
+    const titleMap = {
+        indicators: '行情数据',
+        backtest: '回测指标',
+        news: '新闻信息',
+        technical: '技术面分析',
+        fundamental: '基本面分析',
+        bull: '看多观点',
+        bear: '看空观点',
+        risk: '风险评估',
+        decision: '综合决策',
+        retrospective: '复盘评价',
+        debate: '多轮辩论',
+        final: 'Agent 结论'
+    };
+
+    tradingOutputEl.textContent = '';
+
     for (const [key, value] of
         Object.entries(data)) {
-        text += '====== ' + key + ' ======\n' +
-            value + '\n\n';
+        const title = titleMap[key] || key;
+
+        const sectionEl =
+            document.createElement('section');
+        sectionEl.className = 'trading-output-section';
+
+        const titleEl =
+            document.createElement('h3');
+        titleEl.textContent = title;
+
+        const contentEl =
+            document.createElement('pre');
+        contentEl.textContent =
+            formatTradingValue(value);
+
+        sectionEl.appendChild(titleEl);
+        sectionEl.appendChild(contentEl);
+        tradingOutputEl.appendChild(sectionEl);
     }
-    tradingOutputEl.textContent = text;
 }
+
 async function loadRagStatus() {
     const res = await fetch('/api/rag/status');
     const data = await res.json();
@@ -268,6 +324,9 @@ async function runDebate() {
 
 loginBtn.addEventListener('click', login);
 logoutBtn.addEventListener('click', logout);
+navItems.forEach((item) => {
+    item.addEventListener('click', () => switchView(item.dataset.view));
+});
 sendBtn.addEventListener('click', sendMessage);
 ragStatusBtn.addEventListener('click', loadRagStatus);
 ragReloadBtn.addEventListener('click', reloadRag);

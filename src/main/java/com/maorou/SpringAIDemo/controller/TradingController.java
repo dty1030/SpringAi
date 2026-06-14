@@ -109,9 +109,17 @@ public class TradingController {
     @GetMapping("/api/trading/full")
     public FullReport full(@RequestParam String code, @RequestParam String name){
         String data = stockDataClient.getIndicators(code);
+        String snapshot = stockDataClient.getMarketSnapshot(code);
+        String technicalFacts = stockDataClient.getTechnicalFacts(code);
         String technical = technicalAnalystAgent.prompt(
-                "股票" + name + " 近期真实指标(JSON):\n" +
-                        data + "\n请基于这些真实数字做技术面分析")
+                "股票" + name + " 实时行情快照(JSON):\n" + snapshot +
+                        "\n\n股票" + name +
+                        " 近期真实指标(JSON):\n" + data +
+                        "\n\n【已计算好的技术事实(JSON,直接采信,不要自己重新计算均线关系)】\n" + technicalFacts +
+                "\n请结合实时行情快照、近期指标数据和已计算好的技术事实做技术面分析，并引用具体数值。" +
+                        "\n必须逐项说明 above_ma5、above_ma10、above_ma20、above_ma30、above_ma60、above_ma120、above_ma240 的 true/ false 结果。" +
+                        "\n如果某个 above_maX 是 false， 必须明确说价格低于该均线，不要说成站上或高于。" +
+        "\n不要自己重新计算均线关系，以技术事实 JSON 为准。" +   "\n每一条均线结论必须与对应 above_maX 字段一致： true 表示高于该均线，false 表示低于该均线。")
                 .call().content();
 
         //2. 基本面: RAG 研报
@@ -242,12 +250,13 @@ public class TradingController {
                 localWorkspaceStrategy.allowedFileBaseDir().resolve("my-strategy.txt") );
         String data = stockDataClient.getIndicators(symbol);
         String signals = stockDataClient.getStrategySignals(symbol);
+        String snapshot = stockDataClient.getMarketSnapshot(symbol);
 
         return myStrategyAnalystAgent.prompt(
                 "[我的交易原则]\n" + principles +
-                        "\n\n【已精确计算好的信号事实(JSON,直接采信,不要自己从价格推断)】\n" +
-                        signals +
-                        "\n\n[" + symbol + "行情数据]\n" +
+                        "\n\n【实时行情快照(JSON)】\n" + snapshot +
+                        "\n\n【已精确计算好的信号事实(JSON,直接采信,不要自己从价格推断)】\n" + signals +
+                        "\n\n【" + symbol + "近期指标数据(JSON)】\n" +
                         data + "\n请严格按我上面我的原则分析这只股票, 逐条说明符合或违反了哪条。"
         ).call().content();
     }

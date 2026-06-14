@@ -11,20 +11,77 @@
             background: #f0f2f5;
             height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            color: #1f2937;
         }
 
-        .chat-app {
+        .app-shell {
             width: 100%;
-            max-width: 760px;
-            height: 90vh;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            min-height: 100vh;
+            display: flex;
+            background: #f6f7f9;
+        }
+        .sidebar {
+            width: 240px;
+            flex: 0 0 240px;
+            padding: 20px 16px;
+            color: #e5e7eb;
+            background: #111827;
+        }
+        .brand {
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            gap: 4px;
+            padding: 4px 8px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            margin-bottom: 16px;
+        }
+        .brand-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .brand-subtitle {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .nav-item {
+            width: 100%;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 14px;
+            color: #cbd5e1;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .nav-item.active {
+            color: #fff;
+            background: #2563eb;
+        }
+        .main-shell {
+            min-width: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .workspace {
+            flex: 1;
+            overflow: auto;
+            padding: 18px;
+        }
+        .view {
+            display: none;
+        }
+        .view.active {
+            display: block;
         }
 
         .chat-header {
@@ -98,11 +155,142 @@
             color: #222;
             border-bottom-left-radius: 4px;
         }
+        .trading-page {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .trading-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
 
+        .section-kicker {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #2563eb;
+        }
+
+        .trading-toolbar h2 {
+            font-size: 20px;
+            line-height: 1.3;
+            color: #111827;
+        }
+        .trading-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .trading-actions button {
+            padding: 8px 12px;
+            font-size: 13px;
+            color: #fff;
+            background: #2563eb;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .trading-actions button:hover {
+            background: #1d4ed8;
+        }
+
+        .trading-actions button:disabled {
+            background: #93c5fd;
+            cursor: not-allowed;
+        }
+
+        .trading-query {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(180px, 1fr));
+            gap: 12px;
+            padding: 16px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        .trading-query label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .trading-query label span {
+            font-size: 12px;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .trading-query input {
+            width: 100%;
+            padding: 9px 10px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #111827;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .trading-query input:focus {
+            border-color: #2563eb;
+        }
+
+        .trading-stage-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .trading-stage-card {
+            padding: 12px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        .trading-stage-card strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #111827;
+        }
+
+        .trading-stage-card span {
+            font-size: 12px;
+            line-height: 1.5;
+            color: #6b7280;
+        }
+
+        .trading-result-panel {
+            padding: 16px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        .trading-result-header {
+            margin-bottom: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #374151;
+        }
         .rag-debug {
-            border-top: 1px solid #eee;
-            background: #fafafa;
-            padding: 10px 16px;
+            background: #fff;
+            padding: 14px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
         }
         .rag-debug-header {
             display: flex;
@@ -160,9 +348,10 @@
         }
         #code-input:focus { border-color: #0084ff; }
         #rag-output,
-        #code-output {
+        #code-output,
+        #trading-output {
             margin-top: 8px;
-            max-height: 140px;
+            max-height: 360px;
             overflow: auto;
             padding: 8px;
             font-size: 12px;
@@ -177,8 +366,8 @@
         .input-bar {
             display: flex;
             gap: 10px;
-            padding: 14px 16px;
-            border-top: 1px solid #eee;
+            margin-top: 12px;
+            padding: 0;
         }
         #tool-mode {
             width: 92px;
@@ -213,21 +402,101 @@
             border-radius: 20px;
             cursor: pointer;
         }
-        #trading-output {
-            margin-top: 8px; max-height: 320px; overflow:
-                auto;
-            padding: 8px; font-size: 12px; line-height:
-                1.5;
-            background: #fff; border: 1px solid #eee;
-            border-radius: 6px;
-            white-space: pre-wrap;
-        }
         #send:hover { background: #0073e0; }
         #send:disabled { background: #a0c8f0; cursor: not-allowed; }
+        .system-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        .system-card {
+            padding: 12px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .system-card strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        .system-card span {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        #trading-output {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: none;
+            padding: 0;
+            background: transparent;
+            border: none;
+        }
+
+        .trading-output-section {
+            padding: 14px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        .trading-output-section h3 {
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #111827;
+        }
+
+        .trading-output-section pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #374151;
+            font-family: inherit;
+        }
+        @media (max-width: 720px) {
+            .sidebar {
+                display: none;
+            }
+
+            .trading-toolbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .trading-query {
+                grid-template-columns: 1fr;
+            }
+
+            .trading-stage-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-bar {
+                justify-content: flex-start;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="chat-app">
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="brand-title">AI Research Console</span>
+            <span class="brand-subtitle">Spring AI Workbench</span>
+        </div>
+
+        <nav class="nav-menu">
+            <button class="nav-item active" data-view="trading">Trading</button>
+            <button class="nav-item" data-view="chat">Chat</button>
+            <button class="nav-item" data-view="rag">RAG</button>
+            <button class="nav-item" data-view="code">Code</button>
+            <button class="nav-item" data-view="system">System</button>
+        </nav>
+    </aside>
+
+    <section class="main-shell">
         <header class="chat-header">
             <h1>Spring AI Chat</h1>
             <div class="auth-bar">
@@ -239,78 +508,159 @@
             </div>
         </header>
 
-        <main id="messages" class="messages"></main>
-        <section class="rag-debug">
-            <div class="rag-debug-header">
-                <span>RAG Debug</span>
-                <div class="rag-actions">
-                    <button id="rag-status">Status</button>
-                    <button id="rag-reload">Reload</button>
-                </div>
-            </div>
+        <main class="workspace">
+            <section class="view active" id="view-trading">
+                <section class="trading-page">
+                    <div class="trading-toolbar">
+                        <div>
+                            <span class="section-kicker">Trading Research</span>
+                            <h2>股票研究工作台</h2>
+                        </div>
 
-            <div class="rag-search">
-                <input id="rag-query" type="text"
-                       placeholder="Search RAG..." />
-                <button id="rag-search">Search</button>
-            </div>
+                        <div class="trading-actions">
+                            <button id="trading-full">完整流水线</button>
+                            <button id="trading-debate">多轮辩论</button>
+                        </div>
+                    </div>
 
-            <pre id="rag-output"></pre>
-        </section>
-        <section class="rag-debug">
-            <div class="rag-debug-header">
-                <span>Code Debug</span>
-                <div class="rag-actions">
-                    <button id="code-run">Run</button>
-                </div>
-            </div>
+                    <div class="trading-query">
+                        <label>
+                            <span>股票代码</span>
+                            <input id="trading-code"
+                                   type="text"
+                                   value="sh600519"
+                                   placeholder="sh600519" />
+                        </label>
 
-            <textarea id="code-input" spellcheck="false">public class Main {
+                        <label>
+                            <span>股票名称</span>
+                            <input id="trading-name"
+                                   type="text"
+                                   value="贵州茅台"
+                                   placeholder="贵州茅台" />
+                        </label>
+                    </div>
+
+                    <div class="trading-stage-grid">
+                        <div class="trading-stage-card">
+                            <strong>行情数据</strong>
+                            <span>读取价格、涨跌幅与均线指标</span>
+                        </div>
+
+                        <div class="trading-stage-card">
+                            <strong>回测指标</strong>
+                            <span>计算策略收益、回撤和交易次数</span>
+                        </div>
+
+                        <div class="trading-stage-card">
+                            <strong>新闻信息</strong>
+                            <span>抓取近期市场新闻和公告线索</span>
+                        </div>
+
+                        <div class="trading-stage-card">
+                            <strong>Agent 结论</strong>
+                            <span>汇总多角色分析后的研究判断</span>
+                        </div>
+                    </div>
+
+                    <div class="trading-result-panel">
+                        <div class="trading-result-header">
+                            <span>研究输出</span>
+                        </div>
+                        <pre id="trading-output"></pre>
+                    </div>
+                </section>
+            </section>
+
+            <section class="view" id="view-chat">
+                <section class="rag-debug">
+                    <div class="rag-debug-header">
+                        <span>Chat Lab</span>
+                    </div>
+
+                    <main id="messages" class="messages"></main>
+
+                    <footer class="input-bar">
+                        <select id="tool-mode" aria-label="Tool mode">
+                            <option value="none">None</option>
+                            <option value="time">Time</option>
+                            <option value="file">File</option>
+                            <option value="rag">RAG</option>
+                            <option value="code">Code</option>
+                            <option value="dyn">Dyn</option>
+                            <option value="mcp">MCP</option>
+                            <option value="all">All</option>
+                        </select>
+                        <textarea id="input" rows="1"
+                                  placeholder="Type a message. Enter to send, Shift+Enter for newline."></textarea>
+                        <button id="send">Send</button>
+                    </footer>
+                </section>
+            </section>
+
+            <section class="view" id="view-rag">
+                <section class="rag-debug">
+                    <div class="rag-debug-header">
+                        <span>RAG Debug</span>
+                        <div class="rag-actions">
+                            <button id="rag-status">Status</button>
+                            <button id="rag-reload">Reload</button>
+                        </div>
+                    </div>
+
+                    <div class="rag-search">
+                        <input id="rag-query" type="text"
+                               placeholder="Search RAG..." />
+                        <button id="rag-search">Search</button>
+                    </div>
+
+                    <pre id="rag-output"></pre>
+                </section>
+            </section>
+
+            <section class="view" id="view-code">
+                <section class="rag-debug">
+                    <div class="rag-debug-header">
+                        <span>Code Debug</span>
+                        <div class="rag-actions">
+                            <button id="code-run">Run</button>
+                        </div>
+                    </div>
+
+                    <textarea id="code-input" spellcheck="false">public class Main {
     public static void main(String[] args) {
         System.out.println(1 + 2);
     }
 }</textarea>
 
-            <pre id="code-output"></pre>
-        </section>
-        <section class="rag-debug">
-            <div class="rag-debug-header">
-                <span>Trading Research</span>
-                <div class="rag-actions">
-                    <button
-                            id="trading-full">完整流水线</button>
-                    <button
-                            id="trading-debate">多轮辩论</button>
+                    <pre id="code-output"></pre>
+                </section>
+            </section>
+
+            <section class="view" id="view-system">
+                <div class="system-grid">
+                    <div class="system-card">
+                        <strong>Authentication</strong>
+                        <span>Use the top bar to switch admin, trusted, or guest.</span>
+                    </div>
+                    <div class="system-card">
+                        <strong>RAG</strong>
+                        <span>Open the RAG page to reload and search local documents.</span>
+                    </div>
+                    <div class="system-card">
+                        <strong>Code Sandbox</strong>
+                        <span>Only admin can use direct code execution.</span>
+                    </div>
+                    <div class="system-card">
+                        <strong>Trading Data</strong>
+                        <span>Python FastAPI service should run on localhost:8000.</span>
+                    </div>
                 </div>
-            </div>
-            <div class="rag-search">
-                <input id="trading-code" type="text"
-                       value="sh600519" placeholder="代码 如 sh600519"
-                />
-                <input id="trading-name" type="text"
-                       value="贵州茅台" placeholder="名称 如 贵州茅台"
-                />
-            </div>
-            <pre id="trading-output"></pre>
-        </section>
+            </section>
+        </main>
+    </section>
+</div>
 
-        <footer class="input-bar">
-            <select id="tool-mode" aria-label="Tool mode">
-                <option value="none">None</option>
-                <option value="time">Time</option>
-                <option value="file">File</option>
-                <option value="rag">RAG</option>
-                <option value="code">Code</option>
-                <option value="dyn">Dyn</option>
-                <option value="mcp">MCP</option>
-                <option value="all">All</option>
-            </select>
-            <textarea id="input" rows="1"
-                      placeholder="Type a message. Enter to send, Shift+Enter for newline."></textarea>
-            <button id="send">Send</button>
-        </footer>
-    </div>
-
-    <script src="/app.js"></script>
+<script src="/app.js"></script>
 </body>
 </html>
