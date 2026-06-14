@@ -103,6 +103,14 @@ public class ChatClientConfig {
                 ;
     }
 
+    @Bean
+    public ChatClient rerankerAgent(ChatClient.Builder builder){
+        return builder.defaultSystem("你是一个相关性打分器。用户会给你一个【问题】和一份【文档】," +
+                        "你只需判断这份文档对回答该问题的相关性有多高," +
+                        "输出一个 0 到 10 的整数,只输出数字,不要任何其他文字。"
+
+        ).build();
+    }
 
     TimeTools timeTools = new TimeTools();
     //WeatherTools weatherTools = new WeatherTools();

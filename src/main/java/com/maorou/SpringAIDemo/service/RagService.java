@@ -113,11 +113,11 @@ public class RagService {
                 storeFile.exists() ? storeFile.length() : 0
         );
     }
-
-    public List<Document> search(String query) {
+    //topK 表示
+    public List<Document> search(String query, int topK ) {
         SearchRequest searchRequest = SearchRequest.builder()
                 .query(query)
-                .topK(3)
+                .topK(topK)
                 .similarityThresholdAll()
                 .build();
         List<Document> matches = vectorStore.similaritySearch(searchRequest);

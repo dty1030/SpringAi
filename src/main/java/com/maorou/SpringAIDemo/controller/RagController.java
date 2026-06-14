@@ -33,8 +33,9 @@ public class RagController {
     }
 
     @GetMapping("/search")
-    public List<RagSearchResult> search(@RequestParam String query) {
-        List<Document> documents = ragService.search(query);
+    public List<RagSearchResult> search(@RequestParam String query,
+                                        @RequestParam(defaultValue = "20") int topK) {
+        List<Document> documents = ragService.search(query, topK);
         List<RagSearchResult> results = new ArrayList<>();
         for (int i = 0; i < documents.size(); i++) {
             Document doc = documents.get(i);

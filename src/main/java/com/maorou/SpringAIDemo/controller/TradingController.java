@@ -4,10 +4,14 @@ import com.maorou.SpringAIDemo.functions.StockDataClient;
 import com.maorou.SpringAIDemo.service.RagService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.document.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 public class TradingController {
@@ -28,8 +32,12 @@ public class TradingController {
     StockDataClient stockDataClient;
     @Autowired
     RagService ragService;
-    @Autowired ChatClient riskControlAgent;
-    @Autowired ChatClient retrospectiveAgent;
+    @Autowired
+    ChatClient riskControlAgent;
+    @Autowired
+    ChatClient retrospectiveAgent;
+    @Autowired
+    ChatClient rerankerAgent;
 
     @GetMapping("api/trading/analyze")
     public TradingReport analyze(@RequestParam String symbol){
@@ -182,4 +190,39 @@ public class TradingController {
 
 
     record DebateReport(String transcript, String decision) {}
+
+    private int rerankScore(String question, String docText){
+        String resp = rerankerAgent.prompt(
+                "问题:" + question +
+                        "\n文档:" + docText
+        ).call().content();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d+").matcher(resp);
+        return m.find() ? Integer.parseInt(m.group()) : 0;
+    }
+
+    record Scored(int rerankScore, double cosine, String text){}
+
+    @GetMapping("/api/trading/fundamental-rerank")
+    public Map<String, Object> fundamentalRerank(@RequestParam String question){
+        List<Document> candidates = ragService.search(question, 10);
+        List<Scored> scored = new ArrayList<>();
+        for (Document d : candidates){
+            int score = rerankScore(question, d.getText());
+            scored.add(new Scored(score, d.getScore(), d.getText()));
+        }
+        scored.sort(Comparator.comparingInt(Scored::rerankScore).reversed());
+        List<Scored> top3 = scored.stream()
+                .limit(3).toList();
+
+        String context = top3
+                .stream()
+                .map(Scored::text)
+                .collect(Collectors.joining("\n"));
+        String answer = fundamentalAnalystAgent.prompt(
+                "请基于以下资料分析。 \n问题:" +
+                        question + "\n资料:\n" + context)
+                .call().content();
+        return Map.of("rerank明细", scored, "分析", answer);
+
+    }
 }
