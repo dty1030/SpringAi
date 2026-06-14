@@ -241,9 +241,12 @@ public class TradingController {
         String principles = Files.readString(
                 localWorkspaceStrategy.allowedFileBaseDir().resolve("my-strategy.txt") );
         String data = stockDataClient.getIndicators(symbol);
+        String signals = stockDataClient.getStrategySignals(symbol);
 
         return myStrategyAnalystAgent.prompt(
                 "[我的交易原则]\n" + principles +
+                        "\n\n【已精确计算好的信号事实(JSON,直接采信,不要自己从价格推断)】\n" +
+                        signals +
                         "\n\n[" + symbol + "行情数据]\n" +
                         data + "\n请严格按我上面我的原则分析这只股票, 逐条说明符合或违反了哪条。"
         ).call().content();

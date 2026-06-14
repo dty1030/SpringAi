@@ -21,4 +21,12 @@ public class StockDataClient {
                 String.class,
                 symbol);
     }
+
+    public String getStrategySignals(String symbol) {
+        return restTemplate.getForObject(
+                "http://localhost:8000/strategy?symbol={symbol}",
+                String.class,
+                symbol);
+
+    }
 }
