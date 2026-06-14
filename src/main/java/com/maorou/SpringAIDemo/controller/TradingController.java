@@ -2,6 +2,7 @@ package com.maorou.SpringAIDemo.controller;
 
 import com.maorou.SpringAIDemo.functions.StockDataClient;
 import com.maorou.SpringAIDemo.service.RagService;
+import com.maorou.SpringAIDemo.workspace.LocalWorkspaceStrategy;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.document.Document;
@@ -10,6 +11,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,6 +42,10 @@ public class TradingController {
     ChatClient retrospectiveAgent;
     @Autowired
     ChatClient rerankerAgent;
+    @Autowired
+    ChatClient myStrategyAnalystAgent;
+    @Autowired
+    LocalWorkspaceStrategy localWorkspaceStrategy;
 
     @GetMapping("api/trading/analyze")
     public TradingReport analyze(@RequestParam String symbol){
@@ -224,5 +232,20 @@ public class TradingController {
                 .call().content();
         return Map.of("rerank明细", scored, "分析", answer);
 
+    }
+
+
+    @GetMapping("/api/trading/my-view")
+    public String myView(@RequestParam String symbol) throws IOException {
+        //读取现原则文件
+        String principles = Files.readString(
+                localWorkspaceStrategy.allowedFileBaseDir().resolve("my-strategy.txt") );
+        String data = stockDataClient.getIndicators(symbol);
+
+        return myStrategyAnalystAgent.prompt(
+                "[我的交易原则]\n" + principles +
+                        "\n\n[" + symbol + "行情数据]\n" +
+                        data + "\n请严格按我上面我的原则分析这只股票, 逐条说明符合或违反了哪条。"
+        ).call().content();
     }
 }

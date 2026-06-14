@@ -112,6 +112,17 @@ public class ChatClientConfig {
         ).build();
     }
 
+    @Bean
+    public ChatClient
+    myStrategyAnalystAgent(ChatClient.Builder
+                                   builder) {
+        return builder.defaultSystem(
+                "你是严格遵循用户个人交易体系的分析师。用户会给你[他的交易原则]和[行情数据]," +
+                        "你必须只依据这些原则分析,不要套用通用教科书逻辑," +
+                        "并明确指出当前行情符合或违反了哪几条原则。"
+        ).build();
+    }
+
     TimeTools timeTools = new TimeTools();
     //WeatherTools weatherTools = new WeatherTools();
 
