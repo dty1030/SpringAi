@@ -247,30 +247,79 @@
             border-color: #2563eb;
         }
 
-        .trading-stage-grid {
+        .review-save-panel {
             display: grid;
-            grid-template-columns: repeat(4, minmax(140px, 1fr));
+            grid-template-columns: repeat(2, minmax(180px, 1fr));
             gap: 12px;
-        }
-
-        .trading-stage-card {
-            padding: 12px;
+            padding: 16px;
             background: #fff;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
         }
 
-        .trading-stage-card strong {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 13px;
-            color: #111827;
+        .review-save-panel label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
-        .trading-stage-card span {
+        .review-save-panel label span {
             font-size: 12px;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .review-save-panel input,
+        .review-save-panel textarea {
+            width: 100%;
+            padding: 9px 10px;
+            font-size: 13px;
+            font-family: inherit;
+            color: #111827;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .review-save-panel input:focus,
+        .review-save-panel textarea:focus {
+            border-color: #2563eb;
+        }
+
+        .review-save-panel textarea {
+            min-height: 110px;
+            resize: vertical;
             line-height: 1.5;
-            color: #6b7280;
+        }
+
+        .review-save-wide {
+            grid-column: 1 / -1;
+        }
+
+        .review-save-actions {
+            display: flex;
+            justify-content: flex-end;
+            grid-column: 1 / -1;
+        }
+
+        .review-save-actions button {
+            padding: 8px 12px;
+            font-size: 13px;
+            color: #fff;
+            background: #2563eb;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .review-save-actions button:hover {
+            background: #1d4ed8;
+        }
+
+        .review-save-actions button:disabled {
+            background: #93c5fd;
+            cursor: not-allowed;
         }
 
         .trading-result-panel {
@@ -469,7 +518,7 @@
                 grid-template-columns: 1fr;
             }
 
-            .trading-stage-grid {
+            .review-save-panel {
                 grid-template-columns: 1fr;
             }
 
@@ -518,6 +567,8 @@
                         </div>
 
                         <div class="trading-actions">
+                            <button id="trading-my-view">我的体系分析</button>
+                            <button id="trading-review-view">复盘相似分析</button>
                             <button id="trading-full">完整流水线</button>
                             <button id="trading-debate">多轮辩论</button>
                         </div>
@@ -541,25 +592,34 @@
                         </label>
                     </div>
 
-                    <div class="trading-stage-grid">
-                        <div class="trading-stage-card">
-                            <strong>行情数据</strong>
-                            <span>读取价格、涨跌幅与均线指标</span>
-                        </div>
+                    <div class="review-save-panel">
+                        <label>
+                            <span>复盘开始日期</span>
+                            <input id="review-start-date"
+                                   type="date" />
+                        </label>
 
-                        <div class="trading-stage-card">
-                            <strong>回测指标</strong>
-                            <span>计算策略收益、回撤和交易次数</span>
-                        </div>
+                        <label>
+                            <span>复盘结束日期</span>
+                            <input id="review-end-date"
+                                   type="date" />
+                        </label>
 
-                        <div class="trading-stage-card">
-                            <strong>新闻信息</strong>
-                            <span>抓取近期市场新闻和公告线索</span>
-                        </div>
+                        <label class="review-save-wide">
+                            <span>走势数据</span>
+                            <textarea id="review-market-data"
+                                      spellcheck="false"
+                                      placeholder="粘贴 CSV、JSON 或文本格式的走势数据"></textarea>
+                        </label>
 
-                        <div class="trading-stage-card">
-                            <strong>Agent 结论</strong>
-                            <span>汇总多角色分析后的研究判断</span>
+                        <label class="review-save-wide">
+                            <span>我的复盘结论</span>
+                            <textarea id="review-conclusion"
+                                      placeholder="写下你的判断、依据和后续观察条件"></textarea>
+                        </label>
+
+                        <div class="review-save-actions">
+                            <button id="review-save">保存复盘</button>
                         </div>
                     </div>
 

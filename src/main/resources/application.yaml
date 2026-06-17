@@ -17,7 +17,7 @@ spring:
       base-url: http://localhost:11434
       chat:
         options:
-          model: qwen2.5:7b
+          model: deepseek-r1:32b
 
     # ③ 自动建对话记忆表
     chat:
