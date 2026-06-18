@@ -9,3 +9,5 @@ target/
 
 # 临时测试产物
 test-write.txt
+*.jsonl
+memory/
