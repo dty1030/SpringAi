@@ -254,134 +254,259 @@ function showTradingMarkdown(title, text) {
     tradingOutputEl.appendChild(sectionEl);
 }
 
-function formatCurrentFacts(facts) {
-    if (!facts) {
-        return '没有收到当前事实。';
+function createTradingSection(title, bodyEl) {
+    const sectionEl = document.createElement('section');
+    sectionEl.className = 'trading-output-section';
+
+    const titleEl = document.createElement('h3');
+    titleEl.textContent = title;
+
+    sectionEl.appendChild(titleEl);
+    sectionEl.appendChild(bodyEl);
+    tradingOutputEl.appendChild(sectionEl);
+}
+
+function createStatusBadge(text, tone) {
+    const badge = document.createElement('span');
+    badge.className = 'review-badge ' + tone;
+    badge.textContent = text;
+    return badge;
+}
+
+function createEmptyText(text) {
+    const emptyEl = document.createElement('div');
+    emptyEl.className = 'review-empty';
+    emptyEl.textContent = text;
+    return emptyEl;
+}
+
+function createList(items) {
+    const list = document.createElement('ul');
+    list.className = 'review-list';
+
+    if (!items || items.length === 0) {
+        const item = document.createElement('li');
+        item.textContent = '无';
+        list.appendChild(item);
+        return list;
     }
 
-    const movingAverages = facts.movingAverages || [];
-    const maLines = movingAverages.map((ma) => {
-        const position = ma.above ? '高于' : '低于';
-        return `MA${ma.period}\t${ma.value}\t${position}\t${ma.gapPct}%`;
+    items.forEach((text) => {
+        const item = document.createElement('li');
+        item.textContent = text;
+        list.appendChild(item);
     });
 
-    return [
-        '均线位置',
-        ...maLines,
-        '',
-        '量能',
-        `明显放量：${facts.volumeClearlyExpanded ? '是' : '否'}`,
-        `温和放量：${facts.volumeMildlyExpanded ? '是' : '否'}`,
-        `连续阴线：${facts.consecutiveBearishDays} 天`,
-        '',
-        '依据',
-        facts.evidence || ''
-    ].join('\n');
+    return list;
 }
 
-function formatBulletList(items) {
-    if (!items || items.length === 0) {
-        return '- 无';
+function buildCurrentFactsView(facts) {
+    if (!facts) {
+        return createEmptyText('没有收到当前事实。');
     }
 
-    return items.map((item) => `- ${item}`).join('\n');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'review-facts';
+
+    const summary = document.createElement('div');
+    summary.className = 'review-fact-strip';
+
+    const clearVolume = document.createElement('div');
+    clearVolume.className = 'review-fact-item';
+    clearVolume.innerHTML = '<span>明显放量</span>';
+    clearVolume.appendChild(createStatusBadge(
+        facts.volumeClearlyExpanded ? '是' : '否',
+        facts.volumeClearlyExpanded ? 'warn' : 'neutral'
+    ));
+
+    const mildVolume = document.createElement('div');
+    mildVolume.className = 'review-fact-item';
+    mildVolume.innerHTML = '<span>温和放量</span>';
+    mildVolume.appendChild(createStatusBadge(
+        facts.volumeMildlyExpanded ? '是' : '否',
+        facts.volumeMildlyExpanded ? 'info' : 'neutral'
+    ));
+
+    const bearishDays = document.createElement('div');
+    bearishDays.className = 'review-fact-item';
+    bearishDays.innerHTML = '<span>连续阴线</span>';
+    bearishDays.appendChild(createStatusBadge(
+        `${facts.consecutiveBearishDays ?? 0} 天`,
+        (facts.consecutiveBearishDays || 0) >= 4 ? 'warn' : 'neutral'
+    ));
+
+    summary.appendChild(clearVolume);
+    summary.appendChild(mildVolume);
+    summary.appendChild(bearishDays);
+    wrapper.appendChild(summary);
+
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'review-table-wrap';
+
+    const table = document.createElement('table');
+    table.className = 'review-ma-table';
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>均线</th>
+                <th>数值</th>
+                <th>位置</th>
+                <th>偏离</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+
+    const tbody = table.querySelector('tbody');
+    const movingAverages = facts.movingAverages || [];
+    movingAverages.forEach((ma) => {
+        const row = document.createElement('tr');
+        const gapTone = ma.gapPct >= 0 ? 'positive' : 'negative';
+        row.innerHTML = `
+            <td>MA${ma.period}</td>
+            <td>${ma.value}</td>
+            <td></td>
+            <td class="${gapTone}">${ma.gapPct}%</td>
+        `;
+        row.children[2].appendChild(createStatusBadge(
+            ma.above ? '高于' : '低于',
+            ma.above ? 'positive' : 'negative'
+        ));
+        tbody.appendChild(row);
+    });
+
+    tableWrap.appendChild(table);
+    wrapper.appendChild(tableWrap);
+
+    if (facts.evidence) {
+        const evidence = document.createElement('p');
+        evidence.className = 'review-evidence';
+        evidence.textContent = facts.evidence;
+        wrapper.appendChild(evidence);
+    }
+
+    return wrapper;
 }
 
-function formatSimilarCases(cases) {
+function buildSimilarCasesView(cases) {
     if (!cases || cases.length === 0) {
-        return '没有匹配到相似历史案例。';
+        return createEmptyText('没有匹配到相似历史案例。');
     }
 
-    return cases.map((item, index) => {
-        return [
-            `案例 ${index + 1}`,
-            `来源：${item.source || '未知'}`,
-            '',
-            '核心模式',
-            item.corePattern || '未提供',
-            '',
-            '相似点',
-            formatBulletList(item.similarities),
-            '',
-            '缺失条件',
-            formatBulletList(item.missingConditions)
-        ].join('\n');
-    }).join('\n\n---\n\n');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'review-case-list';
+
+    cases.forEach((item, index) => {
+        const caseEl = document.createElement('article');
+        caseEl.className = 'review-case';
+
+        const header = document.createElement('div');
+        header.className = 'review-case-header';
+
+        const title = document.createElement('strong');
+        title.textContent = `案例 ${index + 1}`;
+
+        const source = document.createElement('span');
+        source.textContent = item.source || '未知来源';
+
+        header.appendChild(title);
+        header.appendChild(source);
+        caseEl.appendChild(header);
+
+        const pattern = document.createElement('p');
+        pattern.className = 'review-case-pattern';
+        pattern.textContent = item.corePattern || '未提供核心模式。';
+        caseEl.appendChild(pattern);
+
+        const columns = document.createElement('div');
+        columns.className = 'review-case-columns';
+
+        const similarities = document.createElement('div');
+        similarities.className = 'review-case-column';
+        similarities.innerHTML = '<h4>相似点</h4>';
+        similarities.appendChild(createList(item.similarities));
+
+        const missing = document.createElement('div');
+        missing.className = 'review-case-column';
+        missing.innerHTML = '<h4>缺失条件</h4>';
+        missing.appendChild(createList(item.missingConditions));
+
+        columns.appendChild(similarities);
+        columns.appendChild(missing);
+        caseEl.appendChild(columns);
+        wrapper.appendChild(caseEl);
+    });
+
+    return wrapper;
 }
 
-function formatRiskNotes(notes) {
-    if (!notes || notes.length === 0) {
-        return '没有额外风险提示。';
-    }
-
-    return formatBulletList(notes);
+function buildRiskNotesView(notes) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'review-note-block';
+    wrapper.appendChild(createList(notes));
+    return wrapper;
 }
 
-function formatConclusion(data) {
-    const similarityLevel = data.similarityLevel || '未知';
-    const conclusion = data.conclusion || '没有收到结论。';
+function buildConclusionView(data) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'review-conclusion';
 
-    return [
-        `相似程度：${similarityLevel}`,
-        '',
-        conclusion
-    ].join('\n');
+    const level = data.similarityLevel || 'unknown';
+    const levelTone = level === 'high'
+        ? 'warn'
+        : level === 'partial'
+            ? 'info'
+            : level === 'none'
+                ? 'neutral'
+                : 'neutral';
+
+    const levelRow = document.createElement('div');
+    levelRow.className = 'review-conclusion-level';
+    levelRow.appendChild(document.createTextNode('相似程度'));
+    levelRow.appendChild(createStatusBadge(level, levelTone));
+
+    const text = document.createElement('p');
+    text.textContent = data.conclusion || '没有收到结论。';
+
+    wrapper.appendChild(levelRow);
+    wrapper.appendChild(text);
+    return wrapper;
+}
+
+function buildRawJsonView(data) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'review-raw-json';
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'review-json-toggle';
+    toggleBtn.textContent = '查看原始 JSON';
+
+    const rawContent = document.createElement('pre');
+    rawContent.className = 'review-json-content';
+    rawContent.hidden = true;
+    rawContent.textContent = JSON.stringify(data, null, 2);
+
+    toggleBtn.addEventListener('click', () => {
+        rawContent.hidden = !rawContent.hidden;
+        toggleBtn.textContent = rawContent.hidden
+            ? '查看原始 JSON'
+            : '收起原始 JSON';
+    });
+
+    wrapper.appendChild(toggleBtn);
+    wrapper.appendChild(rawContent);
+    return wrapper;
 }
 
 function showReviewInsightJson(data) {
     tradingOutputEl.textContent = '';
 
-    const factsSection = document.createElement('section');
-    factsSection.className = 'trading-output-section';
-
-    const factsTitle = document.createElement('h3');
-    factsTitle.textContent = '当前事实';
-
-    const factsContent = document.createElement('pre');
-    factsContent.textContent = formatCurrentFacts(data.currentFacts);
-
-    factsSection.appendChild(factsTitle);
-    factsSection.appendChild(factsContent);
-    tradingOutputEl.appendChild(factsSection);
-
-    const casesSection = document.createElement('section');
-    casesSection.className = 'trading-output-section';
-
-    const casesTitle = document.createElement('h3');
-    casesTitle.textContent = '相似历史案例';
-
-    const casesContent = document.createElement('pre');
-    casesContent.textContent = formatSimilarCases(data.similarCases);
-
-    casesSection.appendChild(casesTitle);
-    casesSection.appendChild(casesContent);
-    tradingOutputEl.appendChild(casesSection);
-
-    const riskSection = document.createElement('section');
-    riskSection.className = 'trading-output-section';
-
-    const riskTitle = document.createElement('h3');
-    riskTitle.textContent = '风险提示';
-
-    const riskContent = document.createElement('pre');
-    riskContent.textContent = formatRiskNotes(data.riskNotes);
-
-    riskSection.appendChild(riskTitle);
-    riskSection.appendChild(riskContent);
-    tradingOutputEl.appendChild(riskSection);
-
-    const conclusionSection = document.createElement('section');
-    conclusionSection.className = 'trading-output-section';
-
-    const conclusionTitle = document.createElement('h3');
-    conclusionTitle.textContent = '结论';
-
-    const conclusionContent = document.createElement('pre');
-    conclusionContent.textContent = formatConclusion(data);
-
-    conclusionSection.appendChild(conclusionTitle);
-    conclusionSection.appendChild(conclusionContent);
-    tradingOutputEl.appendChild(conclusionSection);
+    createTradingSection('当前事实', buildCurrentFactsView(data.currentFacts));
+    createTradingSection('相似历史案例', buildSimilarCasesView(data.similarCases));
+    createTradingSection('风险提示', buildRiskNotesView(data.riskNotes));
+    createTradingSection('结论', buildConclusionView(data));
+    createTradingSection('调试数据', buildRawJsonView(data));
 }
 
 async function loadRagStatus() {
