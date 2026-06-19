@@ -11,3 +11,6 @@ target/
 test-write.txt
 *.jsonl
 memory/
+
+# Claude 项目级记忆(含内部笔记/凭据,只本地加载,绝不入库)
+CLAUDE.md

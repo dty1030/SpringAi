@@ -41,6 +41,10 @@ const reviewConclusionEl =
     document.getElementById('review-conclusion');
 const reviewSaveBtn =
     document.getElementById('review-save');
+const reviewToggleBtn =
+    document.getElementById('review-toggle');
+const reviewPanelEl =
+    document.getElementById('review-panel');
 
 
 
@@ -723,6 +727,12 @@ tradingReviewViewBtn.addEventListener('click',
     runReviewView);
 reviewSaveBtn.addEventListener('click',
     saveReview);
+reviewToggleBtn.addEventListener('click', () => {
+    reviewPanelEl.hidden = !reviewPanelEl.hidden;            // 切换显示/隐藏
+    reviewToggleBtn.classList.toggle('open', !reviewPanelEl.hidden);
+    reviewToggleBtn.textContent = reviewPanelEl.hidden ? '＋ 保存复盘' : '× 收起';
+    if (!reviewPanelEl.hidden) reviewStartDateEl.focus();    // 展开后自动聚焦第一个输入框
+});
 inputEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
