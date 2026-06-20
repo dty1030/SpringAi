@@ -14,3 +14,6 @@ memory/
 
 # Claude 项目级记忆(含内部笔记/凭据,只本地加载,绝不入库)
 CLAUDE.md
+
+# Codex 项目级记忆(同 CLAUDE.md,含内部笔记/凭据,绝不入库)
+AGENTS.md
