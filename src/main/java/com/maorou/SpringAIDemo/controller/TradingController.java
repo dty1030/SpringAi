@@ -1,7 +1,9 @@
 package com.maorou.SpringAIDemo.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.maorou.SpringAIDemo.functions.StockDataClient;
+import com.maorou.SpringAIDemo.service.DecisionEvalService;
 import com.maorou.SpringAIDemo.service.MyViewService;
 import com.maorou.SpringAIDemo.service.RagService;
 import com.maorou.SpringAIDemo.service.ReviewInsightService;
@@ -15,8 +17,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.stringtemplate.v4.ST;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -57,6 +61,8 @@ public class TradingController {
     MyViewService myViewService;
     @Autowired
     ReviewInsightService reviewInsightService;
+    @Autowired
+    DecisionEvalService decisionEvalService;
 
 
     @GetMapping("api/trading/analyze")
@@ -119,7 +125,7 @@ public class TradingController {
     }
 
     @GetMapping("/api/trading/full")
-    public FullReport full(@RequestParam String code, @RequestParam String name) {
+    public FullReport full(@RequestParam String code, @RequestParam String name) throws Exception{
         String data = stockDataClient.getIndicators(code);
         String snapshot = stockDataClient.getMarketSnapshot(code);
         String technicalFacts = stockDataClient.getTechnicalFacts(code);
@@ -156,7 +162,12 @@ public class TradingController {
         //6. 风控
         String risk = riskControlAgent.prompt(debate).call().content();
         // 7. 决策:综合辩论 + 风控
-        String decision = tradingDecisionAgent.prompt(debate + "\n【风控】" + risk).call().content();
+        DecisionResult decision = tradingDecisionAgent.prompt(
+                debate + "\n【风控】" + risk +
+                        "\n请给出最终决策。direction 只能是 看多/看空/观望 三选一；" +
+                        "confidence 是 0-100 的整数把握度；reason 是简短理由。").call().entity(DecisionResult.class);
+        decisionEvalService.save(code, name, decision.direction(),
+                decision.confidence(), decision.reason(), latestClose(data));
         //8. 复盘
         String retrospective = retrospectiveAgent.prompt("辩论: " + debate
                         + "\n风控: " + risk
@@ -171,7 +182,7 @@ public class TradingController {
 
     record FullReport(String technical, String fundamental, String news,
                       String bull, String bear, String risk,
-                      String decision, String retrospective) {
+                      DecisionResult decision, String retrospective) {
     }
 
 
@@ -277,6 +288,36 @@ public class TradingController {
     @GetMapping("/api/trading/review-view-json")
     public ReviewInsightJsonReport reviewViewJson(@RequestParam String symbol) throws IOException {
         return reviewInsightService.analyzeJson(symbol);
+    }
+
+    @GetMapping("/api/trading/fundamental-parent")
+    public Map<String, Object>fundamentalParent(@RequestParam String question){
+        List<Document> candidates = ragService.search(question, 3);
+        String context = candidates.stream()
+                .map(document -> (String)document.getMetadata().get("parent"))
+                .distinct()
+                .collect(Collectors.joining("\n\n"));
+        String answer = fundamentalAnalystAgent.prompt(
+                        "请基于以下资料分析。\n问题:" + question + "\n资料:\n" + context)
+                .call().content();
+        return Map.of(
+                "命中子块", candidates.stream().map(Document::getText).toList(),
+                "喂给LLM的parent", context,
+                "分析", answer);
+    }
+
+    //FOR TEST
+    @GetMapping("/api/trading/decision-test")
+    public Long decisionTest(){
+        return decisionEvalService.saveDummy();
+    }
+
+    record DecisionResult(String direction, int confidence, String reason) {}
+
+    private BigDecimal latestClose(String indicatorsJson) throws Exception{
+        JsonNode arr = objectMapper.readTree(indicatorsJson);
+        JsonNode last = arr.get(arr.size() - 1);
+        return new BigDecimal(last.get("close").asText());
     }
 
 

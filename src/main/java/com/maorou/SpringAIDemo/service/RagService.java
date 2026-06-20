@@ -6,6 +6,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
@@ -78,7 +79,30 @@ public class RagService {
                         .withMinChunkLengthToEmbed(5)
                         .withMaxNumChunks(100)
                         .build();
-        List<Document> chunks = splitter.split(documents);
+
+        TokenTextSplitter parentSplitter = TokenTextSplitter.builder()
+                .withChunkSize(400).withMinChunkSizeChars(150)
+                .withMinChunkLengthToEmbed(5).withMaxNumChunks(100).build();
+        TokenTextSplitter childSplitter = TokenTextSplitter.builder()
+                .withChunkSize(80).withMinChunkSizeChars(20)
+                .withMinChunkLengthToEmbed(5).withMaxNumChunks(100).build();
+
+
+        List<Document> parents = parentSplitter.split(documents);   // ① 先切中等父块
+        List<Document> chunks = new ArrayList<>();
+        for (Document parent : parents) {
+            // ② 【你写】造个带标签的新 Document:内容=父块原文,metadata 的 parent 也=父块原文
+            Document tagged = new Document(parent.getText(),
+                    Map.of("source", String.valueOf(parent.getMetadata().get("source")),
+            "parent", parent.getText()));
+            //    提示:new Document(parent.getText(),
+            //              Map.of("source", String.valueOf(parent.getMetadata().get("source")),
+            //                     "parent", ____ ))
+
+
+            // ③ 【你写】把这个父块切成小子块,加进 chunks(子块自动继承 parent 标签)
+            chunks.addAll(splitter.split(tagged));
+        }
 
         SimpleVectorStore newVectorStore = createEmptyVectorStore();
         newVectorStore.add(chunks);
@@ -169,7 +193,8 @@ public class RagService {
                 Document document = new Document(text,
                         Map.of("source", file.getName(),
                                 "path", file.getAbsolutePath(),
-                                "type", type));
+                                "type", type,
+                                "parent", text));
                 documents.add(document);
 
             }

@@ -128,6 +128,11 @@
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-starter-mcp-client</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.baomidou</groupId>                          <!-- ① 是 com.baomidou,不是 starter 名 -->
+			<artifactId>mybatis-plus-spring-boot3-starter</artifactId>  <!-- ② starter 名放这 -->
+			<version>3.5.9</version>                                  <!-- ③ 必须写版本! -->
+		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>
