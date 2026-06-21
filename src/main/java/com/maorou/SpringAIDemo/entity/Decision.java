@@ -23,7 +23,10 @@ public class Decision {
     private LocalDateTime decidedAt;
     private BigDecimal decidedPrice;
     private LocalDateTime createdAt;
+    private BigDecimal outcomePrice;
+    private BigDecimal returnPct;
+    private LocalDateTime evaluatedAt;
 
-    // ↓ 还差这几个,你来补(注意两个⭐类型)
-    // confidence、reason、decidedAt、decidedPrice、createdAt
+
+
 }

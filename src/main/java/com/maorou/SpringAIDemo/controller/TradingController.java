@@ -319,6 +319,11 @@ public class TradingController {
         JsonNode last = arr.get(arr.size() - 1);
         return new BigDecimal(last.get("close").asText());
     }
+    //
+    @GetMapping("/api/trading/decision-settle")
+    public int decisionSettle(@RequestParam int n){
+        return decisionEvalService.settleDue(n);
+    }
 
 
 
