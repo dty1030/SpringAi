@@ -873,6 +873,35 @@
             line-height: 1.5;
         }
 
+        .review-action-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .review-fill-button {
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            background: var(--primary);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.18);
+        }
+
+        .review-fill-button:hover {
+            background: var(--primary-hover);
+        }
+
+        .review-fill-button:active {
+            transform: translateY(1px);
+        }
+
         /* ===== 自定义滚动条 ===== */
         ::-webkit-scrollbar { width: 10px; height: 10px; }
         ::-webkit-scrollbar-track { background: transparent; }

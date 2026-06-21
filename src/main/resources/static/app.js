@@ -503,9 +503,96 @@ function buildRawJsonView(data) {
     return wrapper;
 }
 
+function ensureReviewPanelOpen() {
+    if (!reviewPanelEl.hidden) {
+        return;
+    }
+
+    reviewPanelEl.hidden = false;
+    reviewToggleBtn.classList.add('open');
+    reviewToggleBtn.textContent = '× 收起';
+}
+
+function buildReviewConclusionText(data) {
+    const lines = [];
+    const facts = data.currentFacts;
+
+    lines.push('## 当前事实');
+    if (facts) {
+        const maSummary = (facts.movingAverages || [])
+            .map((ma) => `MA${ma.period}${ma.above ? '上方' : '下方'}(${ma.gapPct}%)`)
+            .join('，');
+
+        if (maSummary) {
+            lines.push(`均线位置：${maSummary}`);
+        }
+
+        lines.push(`明显放量：${facts.volumeClearlyExpanded ? '是' : '否'}`);
+        lines.push(`温和放量：${facts.volumeMildlyExpanded ? '是' : '否'}`);
+        lines.push(`连续阴线：${facts.consecutiveBearishDays ?? 0} 天`);
+    } else {
+        lines.push('未收到当前事实。');
+    }
+
+    lines.push('');
+    lines.push('## 相似历史案例');
+    const similarCases = data.similarCases || [];
+    if (similarCases.length === 0) {
+        lines.push('未匹配到相似历史案例。');
+    } else {
+        similarCases.forEach((item, index) => {
+            lines.push(`${index + 1}. ${item.source || '未知来源'}`);
+            lines.push(`核心模式：${item.corePattern || '未提供'}`);
+            lines.push(`相似点：${(item.similarities || []).join('；') || '无'}`);
+            lines.push(`缺失条件：${(item.missingConditions || []).join('；') || '无'}`);
+        });
+    }
+
+    lines.push('');
+    lines.push('## 风险提示');
+    const riskNotes = data.riskNotes || [];
+    if (riskNotes.length === 0) {
+        lines.push('无额外风险提示。');
+    } else {
+        riskNotes.forEach((note) => lines.push(`- ${note}`));
+    }
+
+    lines.push('');
+    lines.push('## 结论');
+    lines.push(`相似程度：${data.similarityLevel || 'unknown'}`);
+    lines.push(data.conclusion || '没有收到结论。');
+
+    return lines.join('\n');
+}
+
+function fillReviewConclusion(data) {
+    ensureReviewPanelOpen();
+    reviewConclusionEl.value = buildReviewConclusionText(data);
+    reviewConclusionEl.focus();
+}
+
+function buildReviewActionView(data) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'review-action-bar';
+
+    const fillBtn = document.createElement('button');
+    fillBtn.type = 'button';
+    fillBtn.className = 'review-fill-button';
+    fillBtn.textContent = '填入复盘结论';
+    fillBtn.addEventListener('click', () => fillReviewConclusion(data));
+
+    const hint = document.createElement('span');
+    hint.textContent = '会展开保存复盘面板，并覆盖“我的复盘结论”文本框。';
+
+    wrapper.appendChild(fillBtn);
+    wrapper.appendChild(hint);
+    return wrapper;
+}
+
 function showReviewInsightJson(data) {
     tradingOutputEl.textContent = '';
 
+    createTradingSection('后续操作', buildReviewActionView(data));
     createTradingSection('当前事实', buildCurrentFactsView(data.currentFacts));
     createTradingSection('相似历史案例', buildSimilarCasesView(data.similarCases));
     createTradingSection('风险提示', buildRiskNotesView(data.riskNotes));
