@@ -64,5 +64,13 @@ public class StockDataClient {
 
     }
 
+    public String screen(){
+        return restTemplate.getForObject(
+                baseUrl + "/screen?require_double_volume=true",
+                String.class
+
+        );
+    }
+
 
 }

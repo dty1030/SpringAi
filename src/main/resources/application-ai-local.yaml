@@ -39,6 +39,9 @@ eureka:
   client:
     enabled: false
 app:
+  push:
+    serverchan:
+      key: ${SERVERCHAN_KEY:}
   workspace:
     mode: local
     base-dir: "D:\\ai-workspace"
