@@ -261,15 +261,31 @@
             gap: 16px;
         }
         .trading-toolbar {
+            position: relative;
+            overflow: hidden;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 16px;
-            padding: 18px 20px;
-            background: var(--surface);
+            padding: 20px 22px;
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(247, 249, 252, 0.96));
             border: 1px solid var(--border);
             border-radius: var(--radius);
             box-shadow: var(--shadow-sm);
+        }
+        .trading-toolbar::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto;
+            height: 3px;
+            background: repeating-linear-gradient(
+                90deg,
+                #4f46e5 0 22px,
+                #0f766e 22px 38px,
+                #dc2626 38px 48px,
+                #e6e9f2 48px 58px
+            );
         }
         .section-kicker {
             display: block;
@@ -285,38 +301,89 @@
             line-height: 1.3;
             color: var(--text);
         }
+        .trading-action-stack {
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .trading-action-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-start;
+        }
+        .trading-action-label {
+            padding-left: 2px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-soft);
+        }
         .trading-actions {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
         }
         .trading-actions button {
-            padding: 9px 15px;
+            min-height: 38px;
+            padding: 9px 12px;
             font-size: 13px;
             font-weight: 600;
-            color: #fff;
-            background: var(--primary);
-            border: none;
+            color: var(--text);
+            background: var(--surface);
+            border: 1px solid var(--border-strong);
             border-radius: var(--radius-sm);
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.22);
+            box-shadow: var(--shadow-xs);
         }
         .trading-actions button:hover {
-            background: var(--primary-hover);
+            color: var(--primary);
+            border-color: var(--primary);
+            background: var(--primary-soft);
             transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(79, 70, 229, 0.16);
+        }
+        .trading-actions .action-primary {
+            color: #fff;
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.22);
+        }
+        .trading-actions .action-primary:hover {
+            color: #fff;
+            background: var(--primary-hover);
             box-shadow: 0 8px 18px rgba(79, 70, 229, 0.3);
+        }
+        .trading-actions .action-danger {
+            color: #991b1b;
+            background: #fff7f7;
+            border-color: #fecaca;
+        }
+        .trading-actions .action-danger:hover {
+            color: #fff;
+            background: #b91c1c;
+            border-color: #b91c1c;
+            box-shadow: 0 8px 18px rgba(185, 28, 28, 0.18);
         }
         .trading-actions button:active { transform: translateY(0); }
         .trading-actions button:disabled {
-            background: #b9bdf0;
+            opacity: 0.58;
             box-shadow: none;
             transform: none;
             cursor: not-allowed;
         }
+        button:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible,
+        select:focus-visible {
+            outline: 3px solid rgba(79, 70, 229, 0.32);
+            outline-offset: 2px;
+        }
 
         .trading-query {
             display: grid;
-            grid-template-columns: repeat(2, minmax(180px, 1fr));
+            grid-template-columns: minmax(140px, 0.8fr) minmax(150px, 0.9fr) minmax(280px, 2fr) minmax(110px, 0.5fr);
             gap: 14px;
             padding: 18px 20px;
             background: var(--surface);
@@ -349,6 +416,12 @@
             border-color: var(--primary);
             background: var(--surface);
             box-shadow: 0 0 0 3px var(--primary-ring);
+        }
+        .trading-field-wide {
+            min-width: 260px;
+        }
+        .trading-field-narrow input {
+            font-variant-numeric: tabular-nums;
         }
 
         /* 折叠触发按钮(次要风格,跟分析类主按钮区分开) */
@@ -922,8 +995,23 @@
                 align-items: flex-start;
                 flex-direction: column;
             }
+            .trading-action-stack {
+                align-items: stretch;
+                width: 100%;
+            }
+            .trading-action-group,
+            .trading-actions {
+                width: 100%;
+            }
+            .trading-actions button {
+                flex: 1 1 140px;
+                min-height: 44px;
+            }
             .trading-query {
                 grid-template-columns: 1fr;
+            }
+            .trading-field-wide {
+                min-width: 0;
             }
             .review-save-panel {
                 grid-template-columns: 1fr;
@@ -984,16 +1072,37 @@
                             <h2>股票研究工作台</h2>
                         </div>
 
-                        <div class="trading-actions">
-                            <button id="trading-my-view">我的体系分析</button>
-                            <button id="trading-review-view">复盘相似分析</button>
-                            <button id="trading-full">完整流水线</button>
-                            <button id="trading-debate">多轮辩论</button>
+                        <div class="trading-action-stack" aria-label="交易研究操作">
+                            <div class="trading-action-group">
+                                <span class="trading-action-label">分析</span>
+                                <div class="trading-actions">
+                                    <button id="trading-my-view" class="action-primary">我的体系</button>
+                                    <button id="trading-review-view">复盘相似</button>
+                                    <button id="trading-technical-real">技术实盘</button>
+                                </div>
+                            </div>
+
+                            <div class="trading-action-group">
+                                <span class="trading-action-label">检索</span>
+                                <div class="trading-actions">
+                                    <button id="trading-fundamental-parent">Parent 基本面</button>
+                                    <button id="trading-fundamental-rerank">Rerank 基本面</button>
+                                </div>
+                            </div>
+
+                            <div class="trading-action-group">
+                                <span class="trading-action-label">流程</span>
+                                <div class="trading-actions">
+                                    <button id="trading-full">完整流水线</button>
+                                    <button id="trading-debate">多轮辩论</button>
+                                    <button id="trading-decision-settle" class="action-danger">结算待评估</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <div class="trading-query">
-                        <label>
+                        <label class="trading-field-compact">
                             <span>股票代码</span>
                             <input id="trading-code"
                                    type="text"
@@ -1001,12 +1110,28 @@
                                    placeholder="sh600519" />
                         </label>
 
-                        <label>
+                        <label class="trading-field-compact">
                             <span>股票名称</span>
                             <input id="trading-name"
                                    type="text"
                                    value="贵州茅台"
                                    placeholder="贵州茅台" />
+                        </label>
+
+                        <label class="trading-field-wide">
+                            <span>研究问题</span>
+                            <input id="trading-question"
+                                   type="text"
+                                   value="sh600519 贵州茅台 基本面、业绩、估值、盈利能力和行业地位"
+                                   placeholder="输入基本面/RAG检索问题" />
+                        </label>
+
+                        <label class="trading-field-narrow">
+                            <span>结算天数</span>
+                            <input id="decision-settle-days"
+                                   type="number"
+                                   min="1"
+                                   value="5" />
                         </label>
                     </div>
 
@@ -1047,7 +1172,7 @@
                         <div class="trading-result-header">
                             <span>研究输出</span>
                         </div>
-                        <pre id="trading-output"></pre>
+                        <pre id="trading-output" aria-live="polite"></pre>
                     </div>
                 </section>
             </section>
@@ -1069,6 +1194,7 @@
                             <option value="code">Code</option>
                             <option value="dyn">Dyn</option>
                             <option value="mcp">MCP</option>
+                            <option value="review">Review</option>
                             <option value="all">All</option>
                         </select>
                         <textarea id="input" rows="1"

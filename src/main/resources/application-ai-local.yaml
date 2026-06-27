@@ -1,5 +1,11 @@
 spring:
-
+  cache:
+    redis:
+      time-to-live: 5m
+  data:
+    redis:
+      host: localhost
+      port: 6379
   ai:
     mcp:
       client:
@@ -34,7 +40,9 @@ spring:
     openfeign:
       circuitbreaker:
         enabled: false
-
+logging:
+  level:
+    org.springframework.ai.model.tool: DEBUG
 eureka:
   client:
     enabled: false

@@ -242,3 +242,54 @@
 6. **API 面目每版不同,探测>教程**:akshare 财联社接口 404(=对方路径没了,库滞后,≠网络被掐)、`stock_telegraph_cls` 在这版根本不存在(AttributeError);同一家的不同接口网络命运可不同(东财行情被掐、东财新闻通)。**先 probe 再写代码。**
 
 ---
+
+## ReAct 工具调用（模型自主决定调哪些工具）— 2026-06-25
+
+1. **流水线 vs ReAct = 谁决定"调哪些数据"**:`full()` 是 Java 写死把技术/基本/新闻全拉好硬塞;ReAct 端点**啥都不预拉**,只把工具 `.tools(xxx)` + 一句"分析这股"交出去,**调哪几个、什么顺序由模型推理决定**。分水岭就是端点 body 里有没有"我自己调 stockDataClient.getXxx"——有=流水线,没有(全交给 agentic loop)=ReAct。同"流水线 vs 编排"那条,只是下沉到取数层。
+
+2. **🔑 批量 vs 接力 = 看数据依赖,模型自己选**(一份日志见过两种形态):
+   - **独立工具→一轮批量**:本次 ReAct 4 个数据源(均线/价格/量价/新闻)互不依赖,模型**第一轮一口气吐出全部 4 个 tool_call**,框架挨个串行执行,工具之间时间戳只隔 **1-3 毫秒**(中间没回模型=没推理)。
+   - **有依赖→多轮接力**:早先 readFile→writeFile,write 依赖 read 结果,模型被迫分两步,两工具之间隔 **3.7 秒**(那 3.7s 是模型在"想")。
+   - **判断法**:看工具调用之间的**时间间隔**——毫秒级=批量(无中间推理),秒级=接力(有中间推理)。教科书说"ReAct=多轮想-做",实际 agentic loop **两种都涵盖**,模型按依赖关系自选。
+
+3. **ReAct 里 @Tool 的 description/`@ToolParam` 是模型选工具+填参的唯一依据**:普通模式你 Java 想调谁调谁,description 糊无所谓;ReAct 里模型全靠 description 判断"此刻该调哪个"、靠 @ToolParam 判断"参数填什么格式"。所以:① 每个工具 description 要**占住互不重叠的赛道**(均线结构/原始价格/量价信号/消息面 四条清清楚楚),近义会让 7b 抛硬币或全调浪费步数(同 readFile vs listFiles,但赌注更大);② 参数格式靠 @ToolParam 钉死(统一传 `sh600519` 一种格式,让所有工具都吃得下),否则模型可能传"贵州茅台"/"600519"乱填。
+
+4. **粒度 ≠ 去重**:两个工具**返回数据不同但都属技术面**(均线结构 vs 量价信号)要不要合并,问的是"工具做多粗多细"(粒度),不是"删重复"。建议**不合并**——ReAct 精髓是"模型推理出此刻取哪块最小数据",合并=强制每次全拉、粒度变粗、少看一步漂亮的接力。**让行为说话**:先分开跑,若 DEBUG 发现模型总成对调它俩,再合并省一步不迟。别拍脑袋合。
+
+5. **🔴 源码真相:Spring AI 1.1.6 的 agentic loop 没有内置迭代上限**(javap 实证,简历硬货):`OllamaChatModel.internalCall` 是**递归**(字节码 offset 152 `invokevirtual internalCall` 调自己),唯一出口是 `ToolExecutionEligibilityPredicate.isToolExecutionRequired`(模型这轮还吐不吐 tool_call),**全程无计数器/无 `if count>N`**;`ToolCallingProperties` 配置只有 `throwExceptionOnError`,无 max-iterations。**结论:loop 唯一刹车=模型自己不再要工具,框架不替你喊停**。模型越小(7b)越易犯轴反复调→runaway 空转烧算力/撑爆 num_ctx,**护栏(计数预算/去重收敛)必须自己加,是刚需不是可选**。本地最干净做法=每请求 new 一个带 `int budget`+`int called` 的工具实例(每实例计数器天然隔离,免 ThreadLocal),`if(++called>budget) return "预算用尽,请直接作答"`(**返回字符串喂回模型让它自然收尾,别抛异常 500**)。框架级注入点(自定义 ToolCallingManager/Predicate)是全局的,会波及 chat 多步链,杀鸡用牛刀。
+
+## Redis 声明式缓存（@Cacheable + TTL）— 2026-06-25
+
+1. **缓存的本质=空间换时间,只缓存"慢+确定性+短期不变"的结果**:慢(getIndicators 调 Python 9.8s)、同输入同输出(symbol 相同结果相同)、短期不变(当天指标不变)三条都满足才值得缓。实测 10066ms→46ms ≈ 218 倍。不满足(如 LLM 非确定性输出)的别缓。
+
+2. **声明式 > 手写**:别手动 `redis.get/set` if-else(每方法重复)。Spring 缓存抽象=方法上贴 `@Cacheable(value="区名", key="#参数")`,框架自动 前查后存。同 `@Transactional` 思想(注解声明意图,框架织入横切)。**总开关 `@EnableCaching` 必须有**(贴主类),漏了 @Cacheable 静默失效(同漏 @Tool/@EnableScheduling)。`key="#symbol"` 是 SpEL 引用形参(同 6c 的 `#a`),Redis 里 key 长这样 `区名::值` 如 `indicators::sh600519`。
+
+3. **🔑 TTL 不能写在 @Cacheable 注解上 = "抽象 vs 实现"分层**:`@Cacheable` 是通用缓存抽象(要兼容 Redis/Caffeine/EhCache),而"过期时间"是各后端自己的特性(有的后端无 TTL 概念)→ 抽象层故意不放 TTL,留给"后端配置层" `spring.cache.redis.time-to-live: 5m`(Boot 内置配置项,一行设全局默认 TTL,免写配置类)。想给不同缓存区设不同 TTL 才需要写 RedisCacheConfiguration/RedisCacheManagerBuilderCustomizer Bean(进阶)。同 ToolCallback 统一接口 vs 各家实现。
+
+4. **TTL 是"新鲜度 vs 速度"的权衡旋钮**:太长=快但数据陈旧、太短=新鲜但命中率低省不下。股票指标盘中 5min、收盘后不变可设几小时。**不配 TTL 默认 -1 永不过期**=对会变的数据致命(明天查还吐今天的旧值)。
+
+5. **验缓存看证据不看端点总耗时**:测计时要找"只调被缓存方法、不掺 LLM"的纯路径(临时 /api/cache-test 只 return getIndicators)——否则 technical-real 里 LLM 那几十秒(非确定性、不缓存)把信号淹了(实测 77s 噪音)。真凭据=① Redis 里冒出 key ② 两发 md5 一致(纯缓存数据) ③ `redis-cli ttl key` 从 -1 变正数倒数。
+
+6. **Redis 自己查**:`docker exec -it redis redis-cli` 进交互→ `keys *`/`get k`/`ttl k`(-1永久/-2不存在/正数倒数)/`del k`/`flushall`/`dbsize`。**坑:`get` 出来值前面有乱码字节 `\xac\xed...`=JDK 序列化魔数头(Spring 默认 JDK 序列化缓存值),不是坏了;key 是字符串序列化可读、value 是字节序列化带前缀。想干净可配 JSON 序列化(优化项)。**
+
+### Redis 缓存补充（组合 key + TTL 观察窗口坑）— 2026-06-25
+7. **多参数方法的缓存 key 要拼上所有影响结果的参数,中间加分隔符**:getNews(symbol,name) 用 `key="#symbol + '-' + #name"`(SpEL,单引号是字符串字面量)→ Redis key `news::sh600519-贵州茅台`。只拼一个参数会让不同入参命中同一份缓存拿到错数据;不加分隔符 `-` 会粘连撞车(`("sh6005","19茅台")` 和 `("sh600519","茅台")` 拼出来一样)。不写 key 时 Spring 默认用全部参数(SimpleKeyGenerator)但不可读、跨方法可能撞,多参数显式写 key 更稳。
+8. **🐛 测缓存的观察窗口必须 << TTL,否则 key 在你看到之前就过期了**:曾用 `full`(8 个 qwen Agent 跑 5-7 分钟)触发 getNews,完了查 Redis 发现 key 全空——不是缓存没生效,是 getNews 在 full 第 3 步(开头~2min)就写了缓存,等 full 整个跑完(5-7min)已超过 5min TTL、key 自动蒸发。**诊断关键:cache-test 纯端点立刻能复现 key=通道是好的→锁定是观察时机问题非缓存 bug**。解法=给慢方法也建纯端点(只调被缓存方法、不掺 LLM),miss/hit 都在 TTL 窗口内测。呼应第 5 条"测缓存找纯路径"。
+
+## RAG 生产化:SimpleVectorStore → PgVector(多数据源)— 2026-06-27
+
+1. **玩具 vs 生产级向量库**:SimpleVectorStore=全在内存 + 整个库一个 json 文件 save/load + 搜索挨个全扫 O(n)，开发够用。生产级(pgvector)=向量存进外部 DB、有 **ANN 索引(HNSW)** 亚线性搜索、可共享/并发/持久。**心智去神秘化:向量库就是张表 `vector_store`,一行=id(uuid)/content(原文)/metadata(json)/embedding(vector(1024))**,能 SELECT;HNSW 索引 `hnsw(embedding vector_cosine_ops)` 真建在表上。
+
+2. **多数据源铁律**:Boot 默认只自动配**一个** DataSource;**你手动声明任意一个 DataSource Bean,Boot 的自动数据源就整个让位(@ConditionalOnMissingBean(DataSource))→ 必须两个都自己声明**,且一个标 `@Primary`(默认人选,MyBatis-Plus/聊天记忆都吃主的→给 MySQL)。非主的用 `@Qualifier("beanName")` 点名拿。一个 JdbcTemplate 绑死一个 DataSource("用哪个 JdbcTemplate"="连哪个库")。**别把第二个 JdbcTemplate 暴露成 Bean**(会跟聊天记忆用的那个抢、歧义)→ 在需要处局部 `new JdbcTemplate(qualifiedDataSource)`。
+
+3. **🔴 头号坑:`DataSourceBuilder.create().build()` + `@ConfigurationProperties` 绑的是 HikariDataSource 自己的属性名 → yaml 必须用 `jdbc-url` 不是 `url`**(Hikari 把地址叫 jdbcUrl)。写 `url` 绑不上→`jdbcUrl is required with driverClassName`。(自动配置时能用 url 是因为走 Boot 的 DataSourceProperties,它懂 url;手动直绑 Hikari 就得用 Hikari 的名。)
+
+4. **🔴 `@ConditionalOnMissingBean` 按"@Bean 方法声明的返回类型"匹配,不看运行时真实类型**(javap 实证)。pgvector 自动配置的 `vectorStore()` 返回**具体类 PgVectorStore**,它的 @ConditionalOnMissingBean 问"有没有 PgVectorStore"。你的 Bean 若声明成**接口 VectorStore**→它认不出你这个其实是 PgVectorStore→不让位→两个都注册同名 `vectorStore` Bean→`BeanDefinitionOverrideException` 同名撞车。**修=你的 @Bean 返回类型改成具体的 PgVectorStore**(仍 implements VectorStore,消费方照样按接口注入)。别用 allow-bean-definition-overriding=true 糊弄。
+
+5. **dimensions 必须匹配 embedding 模型**:PgVectorStore.builder 默认 1536(OpenAI),bge-m3 是 1024→不显式 `.dimensions(1024)` 则建出 `vector(1536)` 列,跟实际 1024 维向量对不上,插入炸。
+
+6. **Docker 容器没设 restart 策略,Docker/机器重启后不自动起**(两容器同秒 Exited(255)=引擎被停过)→ `docker update --restart unless-stopped <name>` 一劳永逸。
+
+7. **Windows 端口绑不上报 `forbidden by its access permissions`(≠ in use)= 落在系统"排除端口区间"**(Hyper-V/WSL 预留)→ 换宿主机端口映射(`-p 15432:5432`),别去 netsh 改系统。
+
+8. **迁移=换实现不换接口**:RagService 持久化从"自己 save/load json"改成"注入 PgVectorStore Bean、reload=TRUNCATE 表+vectorStore.add(自动进 PG)";search/getVectorStore 走 VectorStore 接口不变→QuestionAnswerAdvisor 等消费方零改动。**接口隔离让换底层存储几乎无痛**。

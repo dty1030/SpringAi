@@ -10,9 +10,13 @@ import org.springframework.ai.transformer.splitter.TextSplitter;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,24 +34,19 @@ public class RagService {
 
     @Autowired
     EmbeddingModel embeddingModel;
+    @Autowired
+    @Qualifier("pgvectorDataSource")
+    DataSource pgDataSource;
 
+    @Autowired
+    VectorStore vectorStore;
 
-
-    private SimpleVectorStore vectorStore;
 
     private int rawDocumentCount;
     private int chunkCount;
 
-    @PostConstruct
-    public void init() {
-        vectorStore = createEmptyVectorStore();
-        File storeFile = getStoreFile();
-        if (storeFile.exists()) {
-            vectorStore.load(storeFile);
-        }
-    }
 
-    public SimpleVectorStore getVectorStore() {
+    public VectorStore getVectorStore() {
         return vectorStore;
     }
 
@@ -103,19 +102,11 @@ public class RagService {
             // ③ 【你写】把这个父块切成小子块,加进 chunks(子块自动继承 parent 标签)
             chunks.addAll(splitter.split(tagged));
         }
-
-        SimpleVectorStore newVectorStore = createEmptyVectorStore();
-        newVectorStore.add(chunks);
-
-        File storeFile = getStoreFile();
-        File parentDir = storeFile.getParentFile();
-        if (parentDir != null) {
-            parentDir.mkdirs();
-        }
-        newVectorStore.save(storeFile);
-        vectorStore = newVectorStore;
+        new JdbcTemplate(pgDataSource).execute("TRUNCATE TABLE vector_store");
+        vectorStore.add(chunks);
         rawDocumentCount = documents.size();
         chunkCount = chunks.size();
+
 
 
         return status();
@@ -129,10 +120,8 @@ public class RagService {
                 chunkCount,
                 workspaceStrategy.getClass().getSimpleName(),
                 workspaceStrategy.ragDocsDir().toString(),
-                storeFile.getAbsolutePath(),
-                storeFile.exists(),
-                storeFile.exists() ? storeFile.length() : 0
-        );
+                "pgvector:vector_store", true, 0);
+
     }
     //topK 表示
     public List<Document> search(String query, int topK ) {
@@ -166,12 +155,8 @@ public class RagService {
         return workspaceStrategy.ragStoreFile().toFile();
     }
 
-    private void clearVectorStore() throws IOException{
-        vectorStore = createEmptyVectorStore();
-        File storeFile = getStoreFile();
-        if (storeFile.exists()){
-            Files.delete(storeFile.toPath());
-        }
+    private void clearVectorStore() {
+        new JdbcTemplate(pgDataSource).execute("TRUNCATE TABLE vector_store");
         rawDocumentCount = 0;
         chunkCount = 0;
     }

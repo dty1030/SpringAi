@@ -3,6 +3,7 @@ package com.maorou.SpringAIDemo.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.maorou.SpringAIDemo.functions.StockDataClient;
+import com.maorou.SpringAIDemo.functions.StockDataTools;
 import com.maorou.SpringAIDemo.service.DecisionEvalService;
 import com.maorou.SpringAIDemo.service.MyViewService;
 import com.maorou.SpringAIDemo.service.RagService;
@@ -54,6 +55,10 @@ public class TradingController {
     @Autowired
     ChatClient myStrategyAnalystAgent;
     @Autowired
+    ChatClient reactTradingAgent;
+    @Autowired
+    StockDataTools stockDataTools;
+    @Autowired
     LocalWorkspaceStrategy localWorkspaceStrategy;
     @Autowired
     ObjectMapper objectMapper;
@@ -63,6 +68,8 @@ public class TradingController {
     ReviewInsightService reviewInsightService;
     @Autowired
     DecisionEvalService decisionEvalService;
+
+
 
 
     @GetMapping("api/trading/analyze")
@@ -306,6 +313,14 @@ public class TradingController {
                 "分析", answer);
     }
 
+    @GetMapping("/api/trading/react")
+    public String react(@RequestParam String code,
+                        @RequestParam String name){
+        String question = "请分析股票 " + name + "(代码 " + code + ")";
+        return reactTradingAgent.prompt(question).tools(stockDataTools).call().content();
+
+    }
+
     //FOR TEST
     @GetMapping("/api/trading/decision-test")
     public Long decisionTest(){
@@ -323,6 +338,15 @@ public class TradingController {
     @GetMapping("/api/trading/decision-settle")
     public int decisionSettle(@RequestParam int n){
         return decisionEvalService.settleDue(n);
+    }
+
+    @GetMapping("/api/cache-test")
+    public String cacheTest(@RequestParam String symbol){
+        return stockDataClient.getIndicators(symbol);
+    }
+    @GetMapping("/api/cache-test-news")
+    public String cacheTestNews(@RequestParam String symbol, @RequestParam String name){
+        return stockDataClient.getNews(symbol, name);
     }
 
 

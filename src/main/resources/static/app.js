@@ -29,8 +29,20 @@ const tradingMyViewBtn =
     document.getElementById('trading-my-view');
 const tradingReviewViewBtn =
     document.getElementById('trading-review-view');
+const tradingTechnicalRealBtn =
+    document.getElementById('trading-technical-real');
+const tradingFundamentalParentBtn =
+    document.getElementById('trading-fundamental-parent');
+const tradingFundamentalRerankBtn =
+    document.getElementById('trading-fundamental-rerank');
+const tradingDecisionSettleBtn =
+    document.getElementById('trading-decision-settle');
 const tradingOutputEl =
     document.getElementById('trading-output');
+const tradingQuestionEl =
+    document.getElementById('trading-question');
+const decisionSettleDaysEl =
+    document.getElementById('decision-settle-days');
 const reviewStartDateEl =
     document.getElementById('review-start-date');
 const reviewEndDateEl =
@@ -213,7 +225,9 @@ function showTradingResult(data) {
         debate: '多轮辩论',
         final: 'Agent 结论',
         reviewSave: '复盘保存',
-        nextStep: '下一步'
+        nextStep: '下一步',
+        settledCount: '本次结算数量',
+        rule: '结算规则'
     };
 
     tradingOutputEl.textContent = '';
@@ -256,6 +270,30 @@ function showTradingMarkdown(title, text) {
     sectionEl.appendChild(titleEl);
     sectionEl.appendChild(contentEl);
     tradingOutputEl.appendChild(sectionEl);
+}
+
+function buildDefaultTradingQuestion() {
+    const code = tradingCodeEl.value.trim();
+    const name = tradingNameEl.value.trim();
+    return `${code} ${name} 基本面、业绩、估值、盈利能力和行业地位`;
+}
+
+function getTradingQuestion() {
+    const question = tradingQuestionEl.value.trim();
+    return question || buildDefaultTradingQuestion();
+}
+
+async function readResponseText(res) {
+    const text = await res.text();
+    if (!res.ok) {
+        throw new Error('HTTP ' + res.status + '\n' + text);
+    }
+    return text;
+}
+
+async function readResponseJson(res) {
+    const text = await readResponseText(res);
+    return JSON.parse(text);
 }
 
 function createTradingSection(title, bodyEl) {
@@ -745,6 +783,85 @@ async function runReviewView() {
     }
 }
 
+async function runTechnicalReal() {
+    const code = tradingCodeEl.value.trim();
+    tradingOutputEl.textContent = '技术实盘分析中，请稍等...';
+    tradingTechnicalRealBtn.disabled = true;
+
+    try {
+        const res = await fetch('/api/trading/technical-real?symbol=' + encodeURIComponent(code));
+        const data = await readResponseJson(res);
+        showTradingResult(data);
+    } catch (e) {
+        tradingOutputEl.textContent = 'Error: ' + e.message;
+    } finally {
+        tradingTechnicalRealBtn.disabled = false;
+    }
+}
+
+async function runFundamentalParent() {
+    const question = getTradingQuestion();
+    tradingOutputEl.textContent = 'Parent 基本面分析中，请稍等...';
+    tradingFundamentalParentBtn.disabled = true;
+
+    try {
+        const res = await fetch('/api/trading/fundamental-parent?question=' + encodeURIComponent(question));
+        const data = await readResponseJson(res);
+        showTradingResult(data);
+    } catch (e) {
+        tradingOutputEl.textContent = 'Error: ' + e.message;
+    } finally {
+        tradingFundamentalParentBtn.disabled = false;
+    }
+}
+
+async function runFundamentalRerank() {
+    const question = getTradingQuestion();
+    tradingOutputEl.textContent = 'Rerank 基本面分析中，请稍等...';
+    tradingFundamentalRerankBtn.disabled = true;
+
+    try {
+        const res = await fetch('/api/trading/fundamental-rerank?question=' + encodeURIComponent(question));
+        const data = await readResponseJson(res);
+        showTradingResult(data);
+    } catch (e) {
+        tradingOutputEl.textContent = 'Error: ' + e.message;
+    } finally {
+        tradingFundamentalRerankBtn.disabled = false;
+    }
+}
+
+async function runDecisionSettle() {
+    const days = Number(decisionSettleDaysEl.value || 5);
+
+    if (!Number.isInteger(days) || days < 1) {
+        tradingOutputEl.textContent = '结算天数必须是大于 0 的整数。';
+        decisionSettleDaysEl.focus();
+        return;
+    }
+
+    const confirmed = window.confirm(`确认结算 ${days} 天前的待评估决策吗？这会更新数据库里的决策状态。`);
+    if (!confirmed) {
+        return;
+    }
+
+    tradingOutputEl.textContent = '待评估决策结算中...';
+    tradingDecisionSettleBtn.disabled = true;
+
+    try {
+        const res = await fetch('/api/trading/decision-settle?n=' + encodeURIComponent(String(days)));
+        const text = await readResponseText(res);
+        showTradingResult({
+            settledCount: Number(text),
+            rule: `${days} 天前仍为 PENDING 的决策会被结算`
+        });
+    } catch (e) {
+        tradingOutputEl.textContent = 'Error: ' + e.message;
+    } finally {
+        tradingDecisionSettleBtn.disabled = false;
+    }
+}
+
 async function saveReview() {
     const symbol = tradingCodeEl.value.trim();
     const name = tradingNameEl.value.trim();
@@ -812,6 +929,14 @@ tradingMyViewBtn.addEventListener('click',
     runMyView);
 tradingReviewViewBtn.addEventListener('click',
     runReviewView);
+tradingTechnicalRealBtn.addEventListener('click',
+    runTechnicalReal);
+tradingFundamentalParentBtn.addEventListener('click',
+    runFundamentalParent);
+tradingFundamentalRerankBtn.addEventListener('click',
+    runFundamentalRerank);
+tradingDecisionSettleBtn.addEventListener('click',
+    runDecisionSettle);
 reviewSaveBtn.addEventListener('click',
     saveReview);
 reviewToggleBtn.addEventListener('click', () => {

@@ -184,6 +184,13 @@ public class ChatClientConfig {
         ).build();
     }
 
+    @Bean
+    public ChatClient reactTradingAgent(ChatClient.Builder builder){
+        return builder.defaultSystem(
+                "你是股票分析助手。你有获取「均线技术面 / 原始价格 / 量价信号 / 新闻」的工具。请根据分析需要自己决定调用哪些工具、什么顺序，拿到数据后给出综合分析。不要把取数任务推给用户。"
+        ).build();
+    }
+
     TimeTools timeTools = new TimeTools();
     //WeatherTools weatherTools = new WeatherTools();
 

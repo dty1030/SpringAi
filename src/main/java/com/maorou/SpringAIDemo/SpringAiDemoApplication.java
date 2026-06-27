@@ -3,6 +3,7 @@ package com.maorou.SpringAIDemo;
 import com.maorou.SpringAIDemo.web.CustomLoadBalancerConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.cloud.loadbalancer.annotation.LoadBalancerClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
@@ -13,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 @SpringBootApplication
 @LoadBalancerClient(value = "SpringAIDemo", configuration = CustomLoadBalancerConfiguration.class)
 @EnableFeignClients
+@EnableCaching
 public class SpringAiDemoApplication {
 
 	public static void main(String[] args) {

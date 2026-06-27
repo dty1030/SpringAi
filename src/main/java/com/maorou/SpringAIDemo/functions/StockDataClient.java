@@ -1,6 +1,7 @@
 package com.maorou.SpringAIDemo.functions;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -16,7 +17,7 @@ public class StockDataClient {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-
+    @Cacheable(value = "news", key = "#symbol + '-' + #name")
     public String getNews(String symbol, String name){
         return restTemplate.getForObject(
                 baseUrl + "/news?symbol={symbol}&name={name}",
@@ -25,13 +26,14 @@ public class StockDataClient {
 
         );
     }
+    @Cacheable(value = "indicators", key = "#symbol")
     public String getIndicators(String symbol) {
         return restTemplate.getForObject(
                 baseUrl + "/indicators?symbol={symbol}",
                 String.class,
                 symbol);
     }
-
+    @Cacheable(value = "signals", key = "#symbol")
     public String getStrategySignals(String symbol) {
         return restTemplate.getForObject(
                 baseUrl + "/strategy?symbol={symbol}",
@@ -55,6 +57,7 @@ public class StockDataClient {
      * @param symbol
      * @return
      */
+    @Cacheable(value = "technicalFacts", key = "#symbol")
     public String getTechnicalFacts(String symbol){
         return restTemplate.getForObject(
                 baseUrl + "/technical-facts?symbol={symbol}",
